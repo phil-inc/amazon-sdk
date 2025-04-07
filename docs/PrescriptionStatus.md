@@ -1,0 +1,27 @@
+# PrescriptionStatus
+
+## Enum
+
+
+* `PRESCRIPTION_RECEIVED` (value: `"PRESCRIPTION_RECEIVED"`)
+
+* `PRESCRIPTION_CREATED` (value: `"PRESCRIPTION_CREATED"`)
+
+* `PRESCRIPTION_FAILED` (value: `"PRESCRIPTION_FAILED"`)
+
+* `PRESCRIPTION_PRE_PV1` (value: `"PRESCRIPTION_PRE_PV1"`)
+
+* `PRESCRIPTION_PV1` (value: `"PRESCRIPTION_PV1"`)
+
+* `PRESCRIPTION_PV1_FOLLOW_UP` (value: `"PRESCRIPTION_PV1_FOLLOW_UP"`)
+
+* `PRESCRIPTION_ACTIVE` (value: `"PRESCRIPTION_ACTIVE"`)
+
+* `PRESCRIPTION_DISCONTINUED` (value: `"PRESCRIPTION_DISCONTINUED"`)
+
+* `PRESCRIPTION_INVALID` (value: `"PRESCRIPTION_INVALID"`)
+
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+
