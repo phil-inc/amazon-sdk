@@ -22,7 +22,7 @@ type ExistingMedicalConditionsDescriptor string
 const (
 	KNOWN_MEDICAL_CONDITIONS_INCLUDED ExistingMedicalConditionsDescriptor = "KNOWN_MEDICAL_CONDITIONS_INCLUDED"
 	PATIENT_HAS_NO_KNOWN_MEDICAL_CONDITIONS ExistingMedicalConditionsDescriptor = "PATIENT_HAS_NO_KNOWN_MEDICAL_CONDITIONS"
-	NOT_AVAILABLE ExistingMedicalConditionsDescriptor = "NOT_AVAILABLE"
+	NOT_AVAILABLE_2 ExistingMedicalConditionsDescriptor = "NOT_AVAILABLE"
 )
 
 // All allowed values of ExistingMedicalConditionsDescriptor enum
