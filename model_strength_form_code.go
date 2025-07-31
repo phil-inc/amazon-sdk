@@ -381,7 +381,7 @@ const (
 	C43001  StrengthFormCode = "C43001"
 	C43002  StrengthFormCode = "C43002"
 	C64902  StrengthFormCode = "C64902"
-	C38046  StrengthFormCode = "C38046"
+	C38046_2  StrengthFormCode = "C38046"
 	C69052  StrengthFormCode = "C69052"
 	C91195  StrengthFormCode = "C91195"
 	C69053  StrengthFormCode = "C69053"

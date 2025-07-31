@@ -22,7 +22,7 @@ type AllergiesDescriptor string
 const (
 	KNOWN_ALLERGIES_INCLUDED       AllergiesDescriptor = "KNOWN_ALLERGIES_INCLUDED"
 	PATIENT_HAS_NO_KNOWN_ALLERGIES AllergiesDescriptor = "PATIENT_HAS_NO_KNOWN_ALLERGIES"
-	NOT_AVAILABLE                  AllergiesDescriptor = "NOT_AVAILABLE"
+	NOT_AVAILABLE_1                AllergiesDescriptor = "NOT_AVAILABLE"
 )
 
 // All allowed values of AllergiesDescriptor enum

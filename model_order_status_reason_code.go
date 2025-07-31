@@ -30,7 +30,7 @@ const (
 	NO_FILLABLE_PRESCRIPTION                                        OrderStatusReasonCode = "NO_FILLABLE_PRESCRIPTION"
 	PAYMENT_DECLINED                                                OrderStatusReasonCode = "PAYMENT_DECLINED"
 	INVALID_DELIVERY_ADDRESS                                        OrderStatusReasonCode = "INVALID_DELIVERY_ADDRESS"
-	INTERNAL_ERROR                                                  OrderStatusReasonCode = "INTERNAL_ERROR"
+	INTERNAL_ERROR_1                                                OrderStatusReasonCode = "INTERNAL_ERROR"
 	MISSING_PAYMENT_METHOD                                          OrderStatusReasonCode = "MISSING_PAYMENT_METHOD"
 	PENDING_PAYMENT_METHOD_AND_CHECKOUT_FROM_CUSTOMER               OrderStatusReasonCode = "PENDING_PAYMENT_METHOD_AND_CHECKOUT_FROM_CUSTOMER"
 	TAXABLE_STATE_WITH_NO_PAYMENT_METHOD                            OrderStatusReasonCode = "TAXABLE_STATE_WITH_NO_PAYMENT_METHOD"

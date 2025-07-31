@@ -20,10 +20,10 @@ type PatientStatusReasonCode string
 
 // List of PatientStatusReasonCode
 const (
-	INVALID_INSURANCE             PatientStatusReasonCode = "INVALID_INSURANCE"
-	INTERNAL_ERROR                PatientStatusReasonCode = "INTERNAL_ERROR"
-	NON_CONTRACTED_INSURANCE_PLAN PatientStatusReasonCode = "NON_CONTRACTED_INSURANCE_PLAN"
-	INVALID_INSURANCE_PLAN_INPUT  PatientStatusReasonCode = "INVALID_INSURANCE_PLAN_INPUT"
+	INVALID_INSURANCE               PatientStatusReasonCode = "INVALID_INSURANCE"
+	INTERNAL_ERROR                  PatientStatusReasonCode = "INTERNAL_ERROR"
+	NON_CONTRACTED_INSURANCE_PLAN_1 PatientStatusReasonCode = "NON_CONTRACTED_INSURANCE_PLAN"
+	INVALID_INSURANCE_PLAN_INPUT_1  PatientStatusReasonCode = "INVALID_INSURANCE_PLAN_INPUT"
 )
 
 // All allowed values of PatientStatusReasonCode enum
