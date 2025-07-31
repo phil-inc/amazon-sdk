@@ -12,6 +12,7 @@ Name | Type | Description | Notes
 **SendingPharmacy** | Pointer to [**Pharmacy**](Pharmacy.md) |  | [optional] 
 **PrescriptionTransferInDetails** | Pointer to [**PrescriptionTransferInDetails**](PrescriptionTransferInDetails.md) |  | [optional] 
 **ReceivingPharmacy** | [**Pharmacy**](Pharmacy.md) |  | 
+**Observation** | Pointer to [**Observation**](Observation.md) |  | [optional] 
 
 ## Methods
 
@@ -206,6 +207,31 @@ and a boolean to check if the value has been set.
 
 SetReceivingPharmacy sets ReceivingPharmacy field to given value.
 
+
+### GetObservation
+
+`func (o *PutPrescriptionRequestContent) GetObservation() Observation`
+
+GetObservation returns the Observation field if non-nil, zero value otherwise.
+
+### GetObservationOk
+
+`func (o *PutPrescriptionRequestContent) GetObservationOk() (*Observation, bool)`
+
+GetObservationOk returns a tuple with the Observation field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetObservation
+
+`func (o *PutPrescriptionRequestContent) SetObservation(v Observation)`
+
+SetObservation sets Observation field to given value.
+
+### HasObservation
+
+`func (o *PutPrescriptionRequestContent) HasObservation() bool`
+
+HasObservation returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

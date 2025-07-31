@@ -5,7 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Value** | **float64** | Total quantity of the prescription. | 
-**UnitOfMeasureCode** | **string** | A NCI Code, NCPDP Drug QuantityUnitOfMeasure Terminology, e.g., C48542. This shape is deprecated: This field will be replaced by &#x60;quantityUnitOfMeasureCode&#x60;. This field will no longer be supported starting from 2025-03-12. | 
+**UnitOfMeasureCode** | Pointer to **string** | A NCI Code, NCPDP Drug QuantityUnitOfMeasure Terminology, e.g., C48542. This shape is deprecated: This field will be replaced by &#x60;quantityUnitOfMeasureCode&#x60;. This field will no longer be supported starting from 2025-03-12. | [optional] 
 **QuantityUnitOfMeasureCode** | Pointer to [**QuantityUnitOfMeasureCode**](QuantityUnitOfMeasureCode.md) |  | [optional] 
 **CodeListQualifier** | Pointer to [**QuantityCodeListQualifier**](QuantityCodeListQualifier.md) |  | [optional] 
 
@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 
 ### NewQuantity
 
-`func NewQuantity(value float64, unitOfMeasureCode string, ) *Quantity`
+`func NewQuantity(value float64, ) *Quantity`
 
 NewQuantity instantiates a new Quantity object
 This constructor will assign default values to properties that have it defined,
@@ -67,6 +67,11 @@ and a boolean to check if the value has been set.
 
 SetUnitOfMeasureCode sets UnitOfMeasureCode field to given value.
 
+### HasUnitOfMeasureCode
+
+`func (o *Quantity) HasUnitOfMeasureCode() bool`
+
+HasUnitOfMeasureCode returns a boolean if a field has been set.
 
 ### GetQuantityUnitOfMeasureCode
 

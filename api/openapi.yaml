@@ -10,6 +10,64 @@ info:
     - Prescription transfer request creation
 
     ## Changelog for the Amazon Pharmacy APIs (from version 1.15.3):
+
+    ### 2025-07-14 v1.20.1
+    #### Changed:
+    - Updated the regex pattern for `patientDetails.name`, `prescriber.prescriberName`, `pharmacist.pharmacistName` field to accept special characters like `-`, `'`, `.` for `firstName`, `middleName`, `lastName` subfields.
+
+    ### 2025-07-07 v1.20.0
+    #### Added:
+    - `INVALID_DELIVERY_ADDRESS` to `OrderStatusReasonCode`.
+
+    #### Changed:
+    - Updated `MedicationPrescribed` structure to make the `daysSupply` field optional in `PutPrescription API`, allowing prescriber partners to omit this field when calling the PutPrescription API
+
+    ### 2025-07-01 v1.19.0
+    #### Added:
+    - Asynchronous notifications for orders
+    - Added documentation in `PutOrder` callback with `EventNotification` schema which signifies notification structure
+
+    #### Notes:
+    - Order notifications are available for below order statuses for orders created through `PutOrder` API
+      - ORDER_CREATED
+      - ORDER_PROCESSING
+      - ORDER_ON_HOLD
+      - ORDER_SHIPPED
+      - ORDER_CANCELLED
+      - ORDER_FAILED
+
+    ### 2025-06-19 v1.18.2
+    #### Changed:
+    - Updated `PatientDetails` structure to make the `sexAssignedAtBirth` field optional in `PutPatient API`, allowing partners to omit this field when calling the PutPatient API; however, this field will continue to be mandatory for hub partners who manage orders on behalf of customers
+
+    ### 2025-06-10 v1.18.1
+    #### Changed:
+    - Removed mandatory requirement for the deprecated `unitOfMeasureCode` field in `Quantity`.
+    - Updated documentation for quantity and refill fields.
+    - Added comprehensive examples covering various prescription transfer scenarios.
+    - Updated documentation to reflect optional status of `refillsTransferred` field.
+
+    ### 2025-06-03 v1.18.0
+    #### Added:
+    - Added optional field `Observation` in PutPrescriptionRequest to support vital signs data.
+    - Added new structures:
+      - `Observation` with measurement list and notes
+      - `Measurement` with vital sign, value, unit, and date fields
+      - `VitalSign` enum supporting HEIGHT and WEIGHT measurements
+    - Updated `PutPrescription` API examples to demonstrate usage of Observation structure with height and weight measurements.
+
+     #### Changed:
+     - Updated `PatientDetails` structure to make the `smsConsent` field optional, allowing partners to omit this field when calling the PutPatient API. When not provided, `smsConsent` defaults to `false`.
+
+    ### 2025-03-24 v1.17.0
+    #### Added:
+    - Asynchronous notifications for prescriptions.
+    - Added documentation in `PutPrescription` callback with `EventNotification` schema which signifies notification structure
+
+    #### Changed:
+    - `Insurance` now supports `cardholderId`.
+    - `Insurance` and `OrderInsurance` field `encryptedCardholderId` is now deprecated. Please use `cardholderId` instead for `PutPatient` and `PutOrder` calls.
+
     ### 2025-03-26 v1.16.4
     #### Added:
     - Added prescriber-direct prescription example to the `PutPrescription` API documentation.
@@ -23,6 +81,7 @@ info:
     - For pharmacy-to-pharmacy transfers: This structure remains mandatory but is now enforced through server-side validation.
     - For prescriber-originated prescriptions: This structure is not required and should be omitted.
     - Modified `PutOrder` API to include examples for Insurance compliance exceptions and providing useful messaging when `InsuranceComplianceException` is returned.
+
 
     ### 2025-01-06 v1.16.2
     #### Added:
@@ -111,7 +170,7 @@ info:
     - All APIs will accept `client-request-id` as header parameter. This can be set by Partners and it will be used to identify partner API requests. Please see updated request headers for all APIs.
   title: "Amazon Pharmacy APIs for ingesting Prescriptions, Patients, Orders and Payment\
     \ Instruments"
-  version: 1.16.4
+  version: 1.20.1
 servers:
 - description: Production Server
   url: https://partner.pharmacy.api.health.amazon/ingestion
@@ -123,10 +182,32 @@ security:
 paths:
   /order:
     put:
+      callbacks:
+        orderEventCallback:
+          '{$notificationMechanism}':
+            post:
+              operationId: OrderEventCallbackPost
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/EventNotification"
+                required: true
+              responses:
+                "200":
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/PutOrder_502_response"
+                  description: Success response
+              x-callback-request: true
       description: |
         This API is responsible for placing an order on behalf of the patient (Customer) for the referred prescription.
         This will generate a dispense for the medication and a physical shipment to the request contained in the request.
         The order can be updated under select status conditions (ORDER_CANCELLED/ORDER_FAILED).
+
+        Please look at [notification onboarding document](https://github.com/AmazonHealthServices-External/AmazonPharmacyExternalAPISpecs/tree/main/onboarding/async-notification)
+        for onboarding to order event notifications.
       operationId: PutOrder
       parameters:
       - description: This will be provided to your Amazon Pharmacy Account Manager.
@@ -241,7 +322,7 @@ paths:
                       personCode: "01"
                       relationshipCode: CARDHOLDER
             schema:
-              $ref: '#/components/schemas/PutOrderRequestContent'
+              $ref: "#/components/schemas/PutOrderRequestContent"
         required: true
       responses:
         "200":
@@ -254,19 +335,19 @@ paths:
                   value:
                     partnerOrderId: test-order-1
               schema:
-                $ref: '#/components/schemas/PutOrderResponseContent'
+                $ref: "#/components/schemas/PutOrderResponseContent"
           description: PutOrder 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_400_response'
+                $ref: "#/components/schemas/PutOrder_400_response"
           description: PreconditionFailedException or InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "422":
           content:
@@ -301,19 +382,19 @@ paths:
                         \ (no copay) 3. Medicaid as primary only 4. Discount plans\
                         \ as primary only"
               schema:
-                $ref: '#/components/schemas/InsuranceComplianceExceptionResponseContent'
+                $ref: "#/components/schemas/InsuranceComplianceExceptionResponseContent"
           description: InsuranceComplianceException 422 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -321,7 +402,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -329,7 +410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -337,7 +418,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -345,7 +426,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -453,31 +534,31 @@ paths:
                       statusDescription: "01: M/I Bin Number"
                       statusReasonCode: CLAIM_REJECTED
               schema:
-                $ref: '#/components/schemas/GetOrderResponseContent'
+                $ref: "#/components/schemas/GetOrderResponseContent"
           description: GetOrder 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidInputExceptionResponseContent'
+                $ref: "#/components/schemas/InvalidInputExceptionResponseContent"
           description: InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -485,7 +566,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -493,7 +574,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -501,7 +582,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -509,7 +590,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -582,7 +663,7 @@ paths:
                 value:
                   cancellationReason: Rx transferred to other pharmacy
             schema:
-              $ref: '#/components/schemas/CancelOrderRequestContent'
+              $ref: "#/components/schemas/CancelOrderRequestContent"
         required: true
       responses:
         "200":
@@ -595,31 +676,31 @@ paths:
                   value:
                     partnerOrderId: test-order-1
               schema:
-                $ref: '#/components/schemas/CancelOrderResponseContent'
+                $ref: "#/components/schemas/CancelOrderResponseContent"
           description: CancelOrder 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidInputExceptionResponseContent'
+                $ref: "#/components/schemas/InvalidInputExceptionResponseContent"
           description: InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -627,7 +708,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -635,7 +716,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -643,7 +724,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -651,7 +732,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1050,7 +1131,7 @@ paths:
                     zipCode: "98109"
                     countryCode: US
             schema:
-              $ref: '#/components/schemas/PutPatientRequestContent'
+              $ref: "#/components/schemas/PutPatientRequestContent"
         required: true
       responses:
         "200":
@@ -1080,7 +1161,7 @@ paths:
                   value:
                     partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
               schema:
-                $ref: '#/components/schemas/PutPatientResponseContent'
+                $ref: "#/components/schemas/PutPatientResponseContent"
           description: PutPatient 200 response
         "400":
           content:
@@ -1112,19 +1193,19 @@ paths:
                       \ group_number: [00001856] is unknown to Amazon Pharmacy, we\
                       \ cannot accept it at the moment."
               schema:
-                $ref: '#/components/schemas/PreconditionFailedExceptionResponseContent'
+                $ref: "#/components/schemas/PreconditionFailedExceptionResponseContent"
           description: PreconditionFailedException 400 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -1132,7 +1213,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -1140,7 +1221,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -1148,7 +1229,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -1156,7 +1237,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1244,31 +1325,31 @@ paths:
                         countryCode: US
                       email: John.Doe@amazon.com
               schema:
-                $ref: '#/components/schemas/GetPatientResponseContent'
+                $ref: "#/components/schemas/GetPatientResponseContent"
           description: GetPatient 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidInputExceptionResponseContent'
+                $ref: "#/components/schemas/InvalidInputExceptionResponseContent"
           description: InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -1276,7 +1357,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -1284,7 +1365,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -1292,7 +1373,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -1300,7 +1381,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1389,7 +1470,7 @@ paths:
                     zipCode: "98109"
                     countryCode: US
             schema:
-              $ref: '#/components/schemas/PutPaymentInstrumentRequestContent'
+              $ref: "#/components/schemas/PutPaymentInstrumentRequestContent"
         required: true
       responses:
         "200":
@@ -1402,7 +1483,7 @@ paths:
                   value:
                     partnerPaymentInstrumentId: test-pi-1
               schema:
-                $ref: '#/components/schemas/PutPaymentInstrumentResponseContent'
+                $ref: "#/components/schemas/PutPaymentInstrumentResponseContent"
           description: PutPaymentInstrument 200 response
         "400":
           content:
@@ -1418,25 +1499,25 @@ paths:
                     - field: state
                       message: State is incorrect
               schema:
-                $ref: '#/components/schemas/InvalidInputExceptionResponseContent'
+                $ref: "#/components/schemas/InvalidInputExceptionResponseContent"
           description: InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -1444,7 +1525,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -1452,7 +1533,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -1460,7 +1541,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -1468,7 +1549,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1521,7 +1602,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -1529,7 +1610,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -1537,7 +1618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -1545,7 +1626,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -1553,7 +1634,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1605,7 +1686,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -1613,7 +1694,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -1621,7 +1702,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -1629,7 +1710,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -1637,7 +1718,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1689,7 +1770,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -1697,7 +1778,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -1705,7 +1786,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -1713,7 +1794,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -1721,7 +1802,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -1734,6 +1815,25 @@ paths:
         type: mock
   /prescription:
     put:
+      callbacks:
+        prescriptionEventCallback:
+          '{$notificationMechanism}':
+            post:
+              operationId: PrescriptionEventCallbackPost
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/EventNotification"
+                required: true
+              responses:
+                "200":
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/PutOrder_502_response"
+                  description: Success response
+              x-callback-request: true
       description: |
         Prescriptions are required to dispense medications to patients.
         This API is responsible for sending the patient's prescription to Amazon Pharmacy.
@@ -1741,6 +1841,9 @@ paths:
         If the patient exists but in a failed state, the prescription will be ingested but set to failed as well, requiring a new version to be sent.
         For a successful request, the prescription will flow through into the patient's (Amazon customer's) dashboard.
         The prescription can be updated under select status conditions (PRESCRIPTION_FAILED).
+
+        Please look at [notification onboarding document](https://github.com/AmazonHealthServices-External/AmazonPharmacyExternalAPISpecs/tree/main/onboarding/async-notification)
+        for onboarding to prescription event notifications.
       operationId: PutPrescription
       parameters:
       - description: This will be provided to your Amazon Pharmacy Account Manager.
@@ -1820,7 +1923,6 @@ paths:
                       \ (Box, 1.0 Each)"
                     quantity:
                       value: 1
-                      unitOfMeasureCode: C120216
                       quantityUnitOfMeasureCode: C120216
                       codeListQualifier: "38"
                     strength:
@@ -1829,13 +1931,19 @@ paths:
                       strengthUnitOfMeasureCode: C25301
                     daysSupply: 30
                     writtenDate: 2023-11-20
-                    numberOfRefills: 1
+                    numberOfRefills: 0
                     directions: CHANGE POD EVERY 3 DAYS
                     ndc: "08508300001"
                     dispenseAsWritten: "1"
                     effectiveDate: 2023-11-23
-                    firstFillDate: 2021-11-23
-                    lastFillDate: 2022-11-23
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
                   prescriptionTransferInDetails:
                     sendingPharmacy:
                       ncpdpId: "5729871"
@@ -1859,12 +1967,10 @@ paths:
                       refillsRemaining: 1
                       quantityTransferred:
                         value: 1
-                        unitOfMeasureCode: C120216
                         quantityUnitOfMeasureCode: C120216
                         codeListQualifier: QT
                       quantityRemaining:
                         value: 1
-                        unitOfMeasureCode: C120216
                         quantityUnitOfMeasureCode: C120216
                         codeListQualifier: "40"
                       pharmacyRxNumber: "123456"
@@ -1883,6 +1989,17 @@ paths:
                       countryCode: US
                     primaryTelephone: "8557455725"
                     fax: "8557455725"
+                  observation:
+                    measurement:
+                    - vitalSign: HEIGHT
+                      value: "180"
+                      measurementUnitOfMeasure: cm
+                      observationDate: 2023-11-11
+                    - vitalSign: WEIGHT
+                      value: "75"
+                      measurementUnitOfMeasure: kg
+                      observationDate: 2023-11-11
+                    observationNotes: Patient's BMI is within normal range.
               PutPrescription_example2:
                 description: ""
                 summary: Example Request for pharmacy-to-pharmacy previously dispensed
@@ -1926,23 +2043,28 @@ paths:
                     drugDescription: "INSULET CORP OMNIPOD 5 G6 INTRO KIT (GEN 5)\
                       \ (Box, 1.0 Each)"
                     quantity:
-                      value: 3
-                      unitOfMeasureCode: C120216
+                      value: 1
                       quantityUnitOfMeasureCode: C120216
                       codeListQualifier: "38"
                     strength:
-                      value: "200.0"
+                      value: "1.0"
                       strengthFormCode: C29012
                       strengthUnitOfMeasureCode: C25301
                     daysSupply: 30
-                    writtenDate: 2023-11-20
-                    numberOfRefills: 3
+                    writtenDate: 2024-11-20
+                    numberOfRefills: 1
                     directions: CHANGE POD EVERY 3 DAYS
                     ndc: "08508300001"
                     dispenseAsWritten: "1"
-                    effectiveDate: 2023-11-23
-                    firstFillDate: 2021-11-23
-                    lastFillDate: 2022-11-23
+                    effectiveDate: 2024-11-23
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
                   prescriptionTransferInDetails:
                     sendingPharmacy:
                       ncpdpId: "5729871"
@@ -1962,18 +2084,16 @@ paths:
                       fax: "9048374076"
                     prescriptionTransferred:
                       prescriptionFillTransferInType: DISPENSED_BEFORE
-                      firstFillDate: 2021-11-23
-                      lastFillDate: 2022-11-23
-                      refillsTransferred: 2
-                      refillsRemaining: 2
+                      firstFillDate: 2024-11-23
+                      lastFillDate: 2024-11-23
+                      refillsTransferred: 1
+                      refillsRemaining: 1
                       quantityTransferred:
-                        value: 2
-                        unitOfMeasureCode: C120216
+                        value: 1
                         quantityUnitOfMeasureCode: C120216
                         codeListQualifier: QT
                       quantityRemaining:
-                        value: 2
-                        unitOfMeasureCode: C120216
+                        value: 1
                         quantityUnitOfMeasureCode: C120216
                         codeListQualifier: "40"
                       previousDispensedMedications:
@@ -1981,14 +2101,13 @@ paths:
                           \ 5) (Box, 1.0 Each)"
                         quantity:
                           value: 1
-                          unitOfMeasureCode: C120216
                           quantityUnitOfMeasureCode: C120216
                           codeListQualifier: "38"
                         daysSupply: 30
                         directions: CHANGE POD EVERY 3 DAYS
                         ndc: "08508300001"
                         dispenseAsWritten: "1"
-                        lastFillDate: 2022-11-23
+                        lastFillDate: 2024-11-23
                       pharmacyRxNumber: "123456"
                   receivingPharmacy:
                     ncpdpId: "0362309"
@@ -2005,6 +2124,17 @@ paths:
                       countryCode: US
                     primaryTelephone: "8557455725"
                     fax: "8557455725"
+                  observation:
+                    measurement:
+                    - vitalSign: HEIGHT
+                      value: "180"
+                      measurementUnitOfMeasure: cm
+                      observationDate: 2023-11-11
+                    - vitalSign: WEIGHT
+                      value: "75"
+                      measurementUnitOfMeasure: kg
+                      observationDate: 2023-11-11
+                    observationNotes: Patient's BMI is within normal range.
               PutPrescription_example3:
                 description: ""
                 summary: Example Prescription Request for prescriber-direct prescriptions
@@ -2048,7 +2178,6 @@ paths:
                       \ (Box, 1.0 Each)"
                     quantity:
                       value: 3
-                      unitOfMeasureCode: C120216
                       quantityUnitOfMeasureCode: C120216
                       codeListQualifier: "38"
                     strength:
@@ -2062,6 +2191,444 @@ paths:
                     ndc: "08508300001"
                     dispenseAsWritten: "1"
                     effectiveDate: 2023-11-23
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
+                  receivingPharmacy:
+                    ncpdpId: "0362309"
+                    npi: "1912499500"
+                    pharmacyName: AZ Pharmacy LLC
+                    pharmacistName:
+                      firstName: Chris
+                      lastName: Rochon
+                    pharmacyAddress:
+                      addressLine1: 3809 E Watkins St
+                      city: Phoenix
+                      state: AZ
+                      zipCode: 85034-7264
+                      countryCode: US
+                    primaryTelephone: "8557455725"
+                    fax: "8557455725"
+                  observation:
+                    measurement:
+                    - vitalSign: HEIGHT
+                      value: "180"
+                      measurementUnitOfMeasure: cm
+                      observationDate: 2023-11-11
+                    - vitalSign: WEIGHT
+                      value: "75"
+                      measurementUnitOfMeasure: kg
+                      observationDate: 2023-11-11
+                    observationNotes: Patient's BMI is within normal range.
+              PutPrescription_example4:
+                description: ""
+                summary: "Example request for pharmacy-to-pharmacy transfer: Never\
+                  \ Dispensed, No Refills"
+                value:
+                  partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f5
+                  partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
+                  prescriber:
+                    primaryTelephone: "9194713351"
+                    npi: "1639384175"
+                    deaNumber: BK2277780
+                    prescriberName:
+                      firstName: John
+                      lastName: Kihm
+                    prescriberAddress:
+                      addressLine1: 3811 N Roxboro St
+                      city: Durham
+                      state: NC
+                      zipCode: "27704"
+                      countryCode: US
+                    stateLicenseNumber: "55555555"
+                    businessName: Joe and Janes
+                    fax: "9194713351"
+                  medicationPrescribed:
+                    drugDescription: AMLODIPINE - ATORVASTATIN 10 MG - 10 MG TAB
+                    quantity:
+                      value: 30
+                      quantityUnitOfMeasureCode: C48542
+                      codeListQualifier: "38"
+                    strength:
+                      value: "10.0"
+                      strengthFormCode: C42998
+                      strengthUnitOfMeasureCode: C28253
+                    daysSupply: 30
+                    writtenDate: 2023-11-20
+                    numberOfRefills: 0
+                    directions: TAKE 1 TABLET BY MOUTH DAILY
+                    ndc: "60505347903"
+                    dispenseAsWritten: "0"
+                    effectiveDate: 2023-11-23
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
+                  prescriptionTransferInDetails:
+                    sendingPharmacy:
+                      ncpdpId: "5729871"
+                      npi: "1295193324"
+                      pharmacyName: PartnerPharmacy
+                      deaNumber: "0987"
+                      pharmacistName:
+                        firstName: Partner
+                        lastName: Pharmacist
+                      pharmacyAddress:
+                        addressLine1: 1 Terry Ave
+                        city: Seattle
+                        state: WA
+                        zipCode: "32694"
+                        countryCode: US
+                      primaryTelephone: "9048374076"
+                      fax: "9048374076"
+                    prescriptionTransferred:
+                      prescriptionFillTransferInType: NEW_RX
+                      refillsTransferred: 1
+                      refillsRemaining: 1
+                      quantityTransferred:
+                        value: 30
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: QT
+                      quantityRemaining:
+                        value: 30
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: "40"
+                      pharmacyRxNumber: "123456"
+                  receivingPharmacy:
+                    ncpdpId: "0362309"
+                    npi: "1912499500"
+                    pharmacyName: AZ Pharmacy LLC
+                    pharmacistName:
+                      firstName: Chris
+                      lastName: Rochon
+                    pharmacyAddress:
+                      addressLine1: 3809 E Watkins St
+                      city: Phoenix
+                      state: AZ
+                      zipCode: 85034-7264
+                      countryCode: US
+                    primaryTelephone: "8557455725"
+                    fax: "8557455725"
+                  observation:
+                    measurement:
+                    - vitalSign: HEIGHT
+                      value: "180"
+                      measurementUnitOfMeasure: cm
+                      observationDate: 2023-11-11
+                    - vitalSign: WEIGHT
+                      value: "75"
+                      measurementUnitOfMeasure: kg
+                      observationDate: 2023-11-11
+                    observationNotes: Patient's BMI is within normal range.
+              PutPrescription_example5:
+                description: ""
+                summary: "Example request for pharmacy-to-pharmacy transfer: Never\
+                  \ Dispensed, With Refills"
+                value:
+                  partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f6
+                  partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
+                  prescriber:
+                    primaryTelephone: "9194713351"
+                    npi: "1639384175"
+                    deaNumber: BK2277780
+                    prescriberName:
+                      firstName: John
+                      lastName: Kihm
+                    prescriberAddress:
+                      addressLine1: 3811 N Roxboro St
+                      city: Durham
+                      state: NC
+                      zipCode: "27704"
+                      countryCode: US
+                    stateLicenseNumber: "55555555"
+                    businessName: Joe and Janes
+                    fax: "9194713351"
+                  medicationPrescribed:
+                    drugDescription: AMLODIPINE - ATORVASTATIN 10 MG - 10 MG TAB
+                    quantity:
+                      value: 60
+                      quantityUnitOfMeasureCode: C48542
+                      codeListQualifier: "38"
+                    strength:
+                      value: "10.0"
+                      strengthFormCode: C42998
+                      strengthUnitOfMeasureCode: C28253
+                    daysSupply: 30
+                    writtenDate: 2023-11-15
+                    numberOfRefills: 3
+                    directions: TAKE 1 TABLET BY MOUTH TWICE DAILY
+                    ndc: "60505347903"
+                    dispenseAsWritten: "0"
+                    effectiveDate: 2023-11-15
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
+                  prescriptionTransferInDetails:
+                    sendingPharmacy:
+                      ncpdpId: "5729871"
+                      npi: "1295193324"
+                      pharmacyName: PartnerPharmacy
+                      deaNumber: "0987"
+                      pharmacistName:
+                        firstName: Partner
+                        lastName: Pharmacist
+                      pharmacyAddress:
+                        addressLine1: 1 Terry Ave
+                        city: Seattle
+                        state: WA
+                        zipCode: "32694"
+                        countryCode: US
+                      primaryTelephone: "9048374076"
+                      fax: "9048374076"
+                    prescriptionTransferred:
+                      prescriptionFillTransferInType: NEW_RX
+                      refillsTransferred: 4
+                      refillsRemaining: 4
+                      quantityTransferred:
+                        value: 240
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: QT
+                      quantityRemaining:
+                        value: 240
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: "40"
+                      pharmacyRxNumber: "789012"
+                  receivingPharmacy:
+                    ncpdpId: "0362309"
+                    npi: "1912499500"
+                    pharmacyName: AZ Pharmacy LLC
+                    pharmacistName:
+                      firstName: Chris
+                      lastName: Rochon
+                    pharmacyAddress:
+                      addressLine1: 3809 E Watkins St
+                      city: Phoenix
+                      state: AZ
+                      zipCode: 85034-7264
+                      countryCode: US
+                    primaryTelephone: "8557455725"
+                    fax: "8557455725"
+              PutPrescription_example6:
+                description: ""
+                summary: "Example request for pharmacy-to-pharmacy transfer: First\
+                  \ Fill Dispensed, All Refills Transferring"
+                value:
+                  partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f7
+                  partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
+                  prescriber:
+                    primaryTelephone: "9194713351"
+                    npi: "1639384175"
+                    deaNumber: BK2277780
+                    prescriberName:
+                      firstName: John
+                      lastName: Kihm
+                    prescriberAddress:
+                      addressLine1: 3811 N Roxboro St
+                      city: Durham
+                      state: NC
+                      zipCode: "27704"
+                      countryCode: US
+                    stateLicenseNumber: "55555555"
+                    businessName: Joe and Janes
+                    fax: "9194713351"
+                  medicationPrescribed:
+                    drugDescription: LEVOTHYROXINE 50 MCG TABLET
+                    quantity:
+                      value: 30
+                      quantityUnitOfMeasureCode: C48542
+                      codeListQualifier: "38"
+                    strength:
+                      value: "50.0"
+                      strengthFormCode: C42998
+                      strengthUnitOfMeasureCode: C28254
+                    daysSupply: 30
+                    writtenDate: 2023-10-15
+                    numberOfRefills: 3
+                    directions: TAKE 1 TABLET BY MOUTH DAILY ON EMPTY STOMACH
+                    ndc: "00378180301"
+                    dispenseAsWritten: "0"
+                    effectiveDate: 2023-10-20
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
+                  prescriptionTransferInDetails:
+                    sendingPharmacy:
+                      ncpdpId: "5729871"
+                      npi: "1295193324"
+                      pharmacyName: PartnerPharmacy
+                      deaNumber: "0987"
+                      pharmacistName:
+                        firstName: Partner
+                        lastName: Pharmacist
+                      pharmacyAddress:
+                        addressLine1: 1 Terry Ave
+                        city: Seattle
+                        state: WA
+                        zipCode: "32694"
+                        countryCode: US
+                      primaryTelephone: "9048374076"
+                      fax: "9048374076"
+                    prescriptionTransferred:
+                      prescriptionFillTransferInType: DISPENSED_BEFORE
+                      firstFillDate: 2023-10-20
+                      lastFillDate: 2023-10-20
+                      refillsTransferred: 3
+                      refillsRemaining: 3
+                      quantityTransferred:
+                        value: 90
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: QT
+                      quantityRemaining:
+                        value: 90
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: "40"
+                      previousDispensedMedications:
+                      - drugDescription: LEVOTHYROXINE 50 MCG TABLET
+                        quantity:
+                          value: 30
+                          quantityUnitOfMeasureCode: C48542
+                          codeListQualifier: "38"
+                        daysSupply: 30
+                        directions: TAKE 1 TABLET BY MOUTH DAILY ON EMPTY STOMACH
+                        ndc: "00378180301"
+                        dispenseAsWritten: "0"
+                        lastFillDate: 2023-10-20
+                      pharmacyRxNumber: "345678"
+                  receivingPharmacy:
+                    ncpdpId: "0362309"
+                    npi: "1912499500"
+                    pharmacyName: AZ Pharmacy LLC
+                    pharmacistName:
+                      firstName: Chris
+                      lastName: Rochon
+                    pharmacyAddress:
+                      addressLine1: 3809 E Watkins St
+                      city: Phoenix
+                      state: AZ
+                      zipCode: 85034-7264
+                      countryCode: US
+                    primaryTelephone: "8557455725"
+                    fax: "8557455725"
+              PutPrescription_example7:
+                description: ""
+                summary: "Example request for pharmacy-to-pharmacy transfer: First\
+                  \ Fill + One Refill Dispensed, Remaining Refills Transferring"
+                value:
+                  partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f8
+                  partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
+                  prescriber:
+                    primaryTelephone: "9194713351"
+                    npi: "1639384175"
+                    deaNumber: BK2277780
+                    prescriberName:
+                      firstName: John
+                      lastName: Kihm
+                    prescriberAddress:
+                      addressLine1: 3811 N Roxboro St
+                      city: Durham
+                      state: NC
+                      zipCode: "27704"
+                      countryCode: US
+                    stateLicenseNumber: "55555555"
+                    businessName: Joe and Janes
+                    fax: "9194713351"
+                  medicationPrescribed:
+                    drugDescription: LISINOPRIL 10 MG TABLET
+                    quantity:
+                      value: 100
+                      quantityUnitOfMeasureCode: C48542
+                      codeListQualifier: "38"
+                    strength:
+                      value: "10.0"
+                      strengthFormCode: C42998
+                      strengthUnitOfMeasureCode: C28253
+                    daysSupply: 30
+                    writtenDate: 2023-09-15
+                    numberOfRefills: 5
+                    directions: TAKE 1 TABLET BY MOUTH THRICE DAILY
+                    ndc: "68180051401"
+                    dispenseAsWritten: "0"
+                    effectiveDate: 2023-09-15
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        icd10Code: G47.33
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
+                  prescriptionTransferInDetails:
+                    sendingPharmacy:
+                      ncpdpId: "5729871"
+                      npi: "1295193324"
+                      pharmacyName: PartnerPharmacy
+                      deaNumber: "0987"
+                      pharmacistName:
+                        firstName: Partner
+                        lastName: Pharmacist
+                      pharmacyAddress:
+                        addressLine1: 1 Terry Ave
+                        city: Seattle
+                        state: WA
+                        zipCode: "32694"
+                        countryCode: US
+                      primaryTelephone: "9048374076"
+                      fax: "9048374076"
+                    prescriptionTransferred:
+                      prescriptionFillTransferInType: DISPENSED_BEFORE
+                      firstFillDate: 2023-09-20
+                      lastFillDate: 2023-10-20
+                      refillsTransferred: 4
+                      refillsRemaining: 4
+                      quantityTransferred:
+                        value: 400
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: QT
+                      quantityRemaining:
+                        value: 400
+                        quantityUnitOfMeasureCode: C48542
+                        codeListQualifier: "40"
+                      previousDispensedMedications:
+                      - drugDescription: LISINOPRIL 10 MG TABLET
+                        quantity:
+                          value: 100
+                          quantityUnitOfMeasureCode: C48542
+                          codeListQualifier: "38"
+                        daysSupply: 30
+                        directions: TAKE 1 TABLET BY MOUTH THRICE DAILY
+                        ndc: "68180051401"
+                        dispenseAsWritten: "0"
+                        lastFillDate: 2023-09-20
+                      - drugDescription: LISINOPRIL 10 MG TABLET
+                        quantity:
+                          value: 100
+                          quantityUnitOfMeasureCode: C48542
+                          codeListQualifier: "38"
+                        daysSupply: 30
+                        directions: TAKE 1 TABLET BY MOUTH THRICE DAILY
+                        ndc: "68180051401"
+                        dispenseAsWritten: "0"
+                        lastFillDate: 2023-10-20
+                      pharmacyRxNumber: "567890"
                   receivingPharmacy:
                     ncpdpId: "0362309"
                     npi: "1912499500"
@@ -2078,7 +2645,7 @@ paths:
                     primaryTelephone: "8557455725"
                     fax: "8557455725"
             schema:
-              $ref: '#/components/schemas/PutPrescriptionRequestContent'
+              $ref: "#/components/schemas/PutPrescriptionRequestContent"
         required: true
       responses:
         "200":
@@ -2145,32 +2712,112 @@ paths:
                         zipCode: 85034-7264
                       pharmacyName: AZ Pharmacy LLC
                       primaryTelephone: "8557455725"
+                PutPrescription_example4:
+                  description: ""
+                  summary: "Example request for pharmacy-to-pharmacy transfer: Never\
+                    \ Dispensed, No Refills"
+                  value:
+                    partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f5
+                    receivingPharmacy:
+                      ncpdpId: "0362309"
+                      npi: "1912499500"
+                      pharmacistName:
+                        firstName: Chris
+                        lastName: Rochon
+                      pharmacyAddress:
+                        addressLine1: 3809 E Watkins St
+                        city: Phoenix
+                        countryCode: US
+                        state: AZ
+                        zipCode: 85034-7264
+                      pharmacyName: AZ Pharmacy LLC
+                      primaryTelephone: "8557455725"
+                PutPrescription_example5:
+                  description: ""
+                  summary: "Example request for pharmacy-to-pharmacy transfer: Never\
+                    \ Dispensed, With Refills"
+                  value:
+                    partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f6
+                    receivingPharmacy:
+                      ncpdpId: "0362309"
+                      npi: "1912499500"
+                      pharmacistName:
+                        firstName: Chris
+                        lastName: Rochon
+                      pharmacyAddress:
+                        addressLine1: 3809 E Watkins St
+                        city: Phoenix
+                        countryCode: US
+                        state: AZ
+                        zipCode: 85034-7264
+                      pharmacyName: AZ Pharmacy LLC
+                      primaryTelephone: "8557455725"
+                PutPrescription_example6:
+                  description: ""
+                  summary: "Example request for pharmacy-to-pharmacy transfer: First\
+                    \ Fill Dispensed, All Refills Transferring"
+                  value:
+                    partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f7
+                    receivingPharmacy:
+                      ncpdpId: "0362309"
+                      npi: "1912499500"
+                      pharmacistName:
+                        firstName: Chris
+                        lastName: Rochon
+                      pharmacyAddress:
+                        addressLine1: 3809 E Watkins St
+                        city: Phoenix
+                        countryCode: US
+                        state: AZ
+                        zipCode: 85034-7264
+                      pharmacyName: AZ Pharmacy LLC
+                      primaryTelephone: "8557455725"
+                PutPrescription_example7:
+                  description: ""
+                  summary: "Example request for pharmacy-to-pharmacy transfer: First\
+                    \ Fill + One Refill Dispensed, Remaining Refills Transferring"
+                  value:
+                    partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f8
+                    receivingPharmacy:
+                      ncpdpId: "0362309"
+                      npi: "1912499500"
+                      pharmacistName:
+                        firstName: Chris
+                        lastName: Rochon
+                      pharmacyAddress:
+                        addressLine1: 3809 E Watkins St
+                        city: Phoenix
+                        countryCode: US
+                        state: AZ
+                        zipCode: 85034-7264
+                      pharmacyName: AZ Pharmacy LLC
+                      primaryTelephone: "8557455725"
               schema:
-                $ref: '#/components/schemas/PutPrescriptionResponseContent'
+                $ref: "#/components/schemas/PutPrescriptionResponseContent"
           description: PutPrescription 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_400_response'
+                $ref: "#/components/schemas/PutOrder_400_response"
           description: PreconditionFailedException or InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -2178,7 +2825,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -2186,7 +2833,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -2194,7 +2841,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -2202,7 +2849,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -2277,7 +2924,7 @@ paths:
                     primaryTelephone: "8557455725"
                     fax: "8557455725"
             schema:
-              $ref: '#/components/schemas/PostPrescriptionTransferRequestContent'
+              $ref: "#/components/schemas/PostPrescriptionTransferRequestContent"
         required: true
       responses:
         "200":
@@ -2290,25 +2937,25 @@ paths:
                   value:
                     transferRequestStatus: TRANSFER_INITIATED
               schema:
-                $ref: '#/components/schemas/PostPrescriptionTransferResponseContent'
+                $ref: "#/components/schemas/PostPrescriptionTransferResponseContent"
           description: PostPrescriptionTransfer 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PreconditionFailedExceptionResponseContent'
+                $ref: "#/components/schemas/PreconditionFailedExceptionResponseContent"
           description: PreconditionFailedException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "429":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -2316,13 +2963,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -2330,7 +2977,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -2338,7 +2985,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -2346,7 +2993,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -2482,31 +3129,31 @@ paths:
                         businessName: Joe and Janes
                         fax: "9194713351"
               schema:
-                $ref: '#/components/schemas/GetPrescriptionResponseContent'
+                $ref: "#/components/schemas/GetPrescriptionResponseContent"
           description: GetPrescription 200 response
         "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvalidInputExceptionResponseContent'
+                $ref: "#/components/schemas/InvalidInputExceptionResponseContent"
           description: InvalidInputException 400 response
         "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResourceNotFoundExceptionResponseContent'
+                $ref: "#/components/schemas/ResourceNotFoundExceptionResponseContent"
           description: ResourceNotFoundException 404 response
         "500":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalServerExceptionResponseContent'
+                $ref: "#/components/schemas/InternalServerExceptionResponseContent"
           description: InternalServerException 500 response
         "502":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Bad Gateway`: This error occurs when the server, acting as a gateway or proxy, received an invalid response from the upstream server.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this could be a temporary issue with the upstream service.
@@ -2514,7 +3161,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Temporarily service is unavailable`: This error indicates that the server is currently unable to handle the request due to temporary overloading or maintenance.
             **Retry Logic**: Yes, the client should retry the request after a short delay, as this condition is likely to resolve itself.
@@ -2522,7 +3169,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Network error communicating with endpoint`: This error occurs when the server did not receive a timely response from an upstream server or endpoint.
             **Retry Logic**: Yes, the client should retry the request, as this could be a temporary network issue.
@@ -2530,7 +3177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Too many requests`: This error occurs when the number of requests sent by the client exceeds the rate limit or violates the Service Level Agreement (SLA).
             **Retry Logic**: Retry with backoff. The client should wait before retrying, using an exponential backoff strategy to avoid further rate limit violations.
@@ -2538,7 +3185,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PutOrder_502_response'
+                $ref: "#/components/schemas/PutOrder_502_response"
           description: |
             `Forbidden`: This error occurs when the client's credentials are rejected or the client does not have permission to access the resource.
             **Retry Logic**: No, the client should not retry the request as it will likely continue to fail without changes to the request or credentials.
@@ -2600,14 +3247,14 @@ components:
         placeOrderOnDate: placeOrderOnDate
       properties:
         shippingDetails:
-          $ref: '#/components/schemas/ShippingDetails'
+          $ref: "#/components/schemas/ShippingDetails"
         placeOrderOnDate:
           description: API attribute where orders are held till this date and sent
             for order placement only when the date is passed.
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
         claimRejectedDetails:
-          $ref: '#/components/schemas/ClaimRejectionDetails'
+          $ref: "#/components/schemas/ClaimRejectionDetails"
       type: object
     Address:
       description: Structure representing a physical address.
@@ -2688,7 +3335,7 @@ components:
           pattern: "^(([0-9]{6,18})|([0-9]{1,7}))$"
           type: string
         codeType:
-          $ref: '#/components/schemas/AllergyCodeType'
+          $ref: "#/components/schemas/AllergyCodeType"
         textValue:
           description: "A human-readable text value of the allergy. Eg, Peanut Allergy"
           maxLength: 255
@@ -2740,12 +3387,12 @@ components:
         allergies:
           description: "If noKnownAllergies is false, allergies is required"
           items:
-            $ref: '#/components/schemas/Allergy'
+            $ref: "#/components/schemas/Allergy"
           maxItems: 100
           minItems: 0
           type: array
         allergiesDescriptor:
-          $ref: '#/components/schemas/AllergiesDescriptor'
+          $ref: "#/components/schemas/AllergiesDescriptor"
       type: object
     CancelOrderRequestContent:
       description: Structure representing the request for cancelling an order.
@@ -2852,7 +3499,7 @@ components:
         claimRejectionReasons:
           description: This field represents reasons for claim rejections
           items:
-            $ref: '#/components/schemas/ClaimRejectionReason'
+            $ref: "#/components/schemas/ClaimRejectionReason"
           type: array
       type: object
     ClaimRejectionReason:
@@ -2878,18 +3525,18 @@ components:
           maximumDaysSupply: 0.8008281904610115
       properties:
         claimRejectionType:
-          $ref: '#/components/schemas/ClaimRejectionType'
+          $ref: "#/components/schemas/ClaimRejectionType"
         rejectionTypeDescription:
           description: This field contains the description explaining the claimRejectionType
           maxLength: 255
           pattern: ^\s*\S.*$
           type: string
         fieldErrors:
-          $ref: '#/components/schemas/FieldErrors'
+          $ref: "#/components/schemas/FieldErrors"
         rejectedInsuranceDetails:
-          $ref: '#/components/schemas/RejectedInsuranceDetails'
+          $ref: "#/components/schemas/RejectedInsuranceDetails"
         daysSupplyDetails:
-          $ref: '#/components/schemas/DaysSupplyDetails'
+          $ref: "#/components/schemas/DaysSupplyDetails"
       type: object
     ClaimRejectionType:
       description: |-
@@ -2944,7 +3591,7 @@ components:
         contactSystemType: Mobile
       properties:
         contactSystemType:
-          $ref: '#/components/schemas/ContactSystemType'
+          $ref: "#/components/schemas/ContactSystemType"
         countryCode:
           description: Country code of the phone number
           type: number
@@ -3072,7 +3719,7 @@ components:
           pattern: ^\s*\S.*$
           type: string
         qualifier:
-          $ref: '#/components/schemas/DrugDbCodeQualifier'
+          $ref: "#/components/schemas/DrugDbCodeQualifier"
       required:
       - code
       - qualifier
@@ -3154,6 +3801,20 @@ components:
       - GSP
       - US
       type: string
+    EntityType:
+      description: |-
+        Enum representing the different entity types
+
+        `PRESCRIPTION` - Represents the prescription entity
+
+        `ORDER` - Represents the order entity
+
+        `PATIENT` - Represents the patient entity
+      enum:
+      - prescription
+      - order
+      - patient
+      type: string
     ErrorField:
       description: Structure contains the Error field and error message specific to
         the field.
@@ -3172,6 +3833,38 @@ components:
       required:
       - field
       type: object
+    EventNotification:
+      description: This represents the notification schema
+      example:
+        eventDatetime: eventDatetime
+        entityType: prescription
+        entityId: entityId
+        eventType: status_change
+      properties:
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        eventDatetime:
+          description: The date and time of the event
+          pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3,9})?(?:Z|[+-]\\\
+            d{2}:\\d{2})$"
+          type: string
+        entityType:
+          $ref: "#/components/schemas/EntityType"
+        entityId:
+          description: |-
+            The entity Id of the entity. This will map to the IDs during the Put operation of the entity. For example
+               this will map to the partnerPrescriptionId in the Prescription /PUT operation
+          pattern: "^[0-9a-zA-Z-]{1,40}$"
+          type: string
+      type: object
+    EventType:
+      description: |-
+        Enum representing the type of event
+
+        `STATUS_CHANGE` - Indicates a change in status of the entity
+      enum:
+      - status_change
+      type: string
     ExistingMedicalConditionsDescriptor:
       description: |-
         Enum representing the descriptor for the patient's existing medical conditions.
@@ -3221,12 +3914,12 @@ components:
         existingMedicalConditions:
           description: "If noKnownExistingConditions is false, conditions is required"
           items:
-            $ref: '#/components/schemas/MedicalCondition'
+            $ref: "#/components/schemas/MedicalCondition"
           maxItems: 50
           minItems: 0
           type: array
         existingMedicalConditionsDescriptor:
-          $ref: '#/components/schemas/ExistingMedicalConditionsDescriptor'
+          $ref: "#/components/schemas/ExistingMedicalConditionsDescriptor"
       type: object
     ExistingMedication:
       description: Structure representing an existing/current medication the patient
@@ -3262,9 +3955,9 @@ components:
           pattern: ^\s*\S.*$
           type: string
         strength:
-          $ref: '#/components/schemas/Strength'
+          $ref: "#/components/schemas/Strength"
         quantity:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
       required:
       - ndc
       type: object
@@ -3347,12 +4040,12 @@ components:
         existingMedications:
           description: List of existing medications for the patient.
           items:
-            $ref: '#/components/schemas/ExistingMedication'
+            $ref: "#/components/schemas/ExistingMedication"
           maxItems: 100
           minItems: 0
           type: array
         existingMedicationsDescriptor:
-          $ref: '#/components/schemas/ExistingMedicationsDescriptor'
+          $ref: "#/components/schemas/ExistingMedicationsDescriptor"
       type: object
     ExistingMedicationsDescriptor:
       description: |-
@@ -3379,7 +4072,7 @@ components:
         message: message
       properties:
         ruleType:
-          $ref: '#/components/schemas/InsuranceComplianceRuleType'
+          $ref: "#/components/schemas/InsuranceComplianceRuleType"
         message:
           description: Informational message about the failed rule
           type: string
@@ -3405,12 +4098,12 @@ components:
         demographicErrors:
           description: List of PossibleDemographicFieldsInError enums
           items:
-            $ref: '#/components/schemas/PossibleDemographicFieldsInError'
+            $ref: "#/components/schemas/PossibleDemographicFieldsInError"
           type: array
         insuranceErrors:
           description: List of PossibleInsuranceFieldsInError enums
           items:
-            $ref: '#/components/schemas/PossibleInsuranceFieldsInError'
+            $ref: "#/components/schemas/PossibleInsuranceFieldsInError"
           type: array
       type: object
     GetOrderResponseContent:
@@ -3471,7 +4164,7 @@ components:
           filledDate: filledDate
       properties:
         order:
-          $ref: '#/components/schemas/Order'
+          $ref: "#/components/schemas/Order"
       required:
       - order
       type: object
@@ -3516,7 +4209,7 @@ components:
           status: PATIENT_RECEIVED
       properties:
         patient:
-          $ref: '#/components/schemas/Patient'
+          $ref: "#/components/schemas/Patient"
       required:
       - patient
       type: object
@@ -3605,7 +4298,7 @@ components:
         partnerPrescriptionId: partnerPrescriptionId
       properties:
         prescription:
-          $ref: '#/components/schemas/Prescription'
+          $ref: "#/components/schemas/Prescription"
         partnerPrescriptionId:
           description: The partner Prescription ID of the requested prescription.
           pattern: "^[0-9a-zA-Z-]{1,40}$"
@@ -3618,17 +4311,18 @@ components:
       description: Structure representing insurance information associated with the
         patient.
       example:
-        expiryDate: expiryDate
-        payerType: COMMERCIAL
+        cardholderId: cardholderId
         encryptedCardholderId: encryptedCardholderId
         binNumber: binNumber
-        payerName: payerName
-        pcn: pcn
-        stateCode: stateCode
         relationshipCode: NOT_SPECIFIED
         groupNumber: groupNumber
         partnerInsuranceId: partnerInsuranceId
         personCode: personCode
+        expiryDate: expiryDate
+        payerType: COMMERCIAL
+        payerName: payerName
+        pcn: pcn
+        stateCode: stateCode
         startDate: startDate
       properties:
         pcn:
@@ -3653,7 +4347,7 @@ components:
           pattern: "^\\d{6}$"
           type: string
         payerType:
-          $ref: '#/components/schemas/PayerType'
+          $ref: "#/components/schemas/PayerType"
         payerName:
           description: The name of the payer associated with the insurance plan.
           maxLength: 255
@@ -3674,7 +4368,7 @@ components:
           pattern: "^[0-9]*$"
           type: string
         relationshipCode:
-          $ref: '#/components/schemas/PatientRelationship'
+          $ref: "#/components/schemas/PatientRelationship"
         startDate:
           description: Start date for the insurance coverage. This indicates when
             the insurance coverage begins.
@@ -3685,20 +4379,33 @@ components:
             when the insurance will no longer be valid.
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
+        cardholderId:
+          description: |-
+            The memberId of this person's insurance information.
+            It includes their suffix and is the primary identifier for their insurance coverage.
+            Must be alphanumeric and between 1 to 20 characters.
+          maxLength: 20
+          minLength: 1
+          pattern: "^[a-zA-Z0-9-]*$"
+          type: string
         partnerInsuranceId:
           description: A unique identifier to identify the partner-provided insurance.
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         encryptedCardholderId:
+          deprecated: true
           description: |-
+            Deprecated, use cardholderId instead.
+            One of unencrypted or encrypted cardholder is required.
             Insurance card number encrypted using the patient-information-encryption-key.
             The unencrypted value cannot exceed 20 characters.
+
+            This shape is deprecated.
           maxLength: 255
           pattern: ^\s*\S.*$
           type: string
       required:
       - binNumber
-      - encryptedCardholderId
       - partnerInsuranceId
       - personCode
       type: object
@@ -3716,7 +4423,7 @@ components:
         failedRules:
           description: List of specific rules that were violated
           items:
-            $ref: '#/components/schemas/FailedRule'
+            $ref: "#/components/schemas/FailedRule"
           type: array
         message:
           description: Informational message about the insurance compliance exception
@@ -3793,14 +4500,43 @@ components:
           pattern: ^\s*\S.*$
           type: string
         errorCode:
-          $ref: '#/components/schemas/InvalidInputErrorCode'
+          $ref: "#/components/schemas/InvalidInputErrorCode"
         errorFieldList:
           description: "List of fields responsible for the error, if applicable."
           items:
-            $ref: '#/components/schemas/ErrorField'
+            $ref: "#/components/schemas/ErrorField"
           type: array
       required:
       - message
+      type: object
+    Measurement:
+      example:
+        vitalSign: HEIGHT
+        observationDate: observationDate
+        measurementUnitOfMeasure: measurementUnitOfMeasure
+        value: value
+      properties:
+        vitalSign:
+          $ref: "#/components/schemas/VitalSign"
+        value:
+          description: The empirical value of the vital sign observed
+          maxLength: 18
+          minLength: 1
+          pattern: "^([!-~]|[ ])*[!-~]([!-~]|[ ])*$"
+          type: string
+        measurementUnitOfMeasure:
+          description: "The unit of measurement for the vital sign (e.g., kg, cm)"
+          pattern: "^([!-~]|[ ])*[!-~]([!-~]|[ ])*$"
+          type: string
+        observationDate:
+          description: Date on which observation was recorded
+          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+          type: string
+      required:
+      - measurementUnitOfMeasure
+      - observationDate
+      - value
+      - vitalSign
       type: object
     MedicalCondition:
       description: Structure representing a medical condition of the patient.
@@ -3816,7 +4552,7 @@ components:
             .[01])?$"
           type: string
         codeType:
-          $ref: '#/components/schemas/ConditionCodeType'
+          $ref: "#/components/schemas/ConditionCodeType"
         textValue:
           description: A human-readable text value of the medical condition.
           maxLength: 255
@@ -3837,11 +4573,11 @@ components:
           description: description
       properties:
         clinicalInformationQualifier:
-          $ref: '#/components/schemas/ClinicalInformationQualifier'
+          $ref: "#/components/schemas/ClinicalInformationQualifier"
         primary:
-          $ref: '#/components/schemas/DiagnosisCode'
+          $ref: "#/components/schemas/DiagnosisCode"
         secondary:
-          $ref: '#/components/schemas/DiagnosisCode'
+          $ref: "#/components/schemas/DiagnosisCode"
       required:
       - clinicalInformationQualifier
       - primary
@@ -3902,9 +4638,9 @@ components:
           pattern: ^\s*\S.*$
           type: string
         quantity:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
         strength:
-          $ref: '#/components/schemas/Strength'
+          $ref: "#/components/schemas/Strength"
         daysSupply:
           description: Estimated number of days a prescription would last.
           format: double
@@ -3915,7 +4651,8 @@ components:
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
         numberOfRefills:
-          description: The number of refills allowed for this prescription.
+          description: The number of refills allowed for this prescription excluding
+            the first fill.
           format: double
           type: number
         directions:
@@ -3935,7 +4672,7 @@ components:
           pattern: "^\\d{1,10}$"
           type: string
         drugDbCode:
-          $ref: '#/components/schemas/DrugDbCode'
+          $ref: "#/components/schemas/DrugDbCode"
         dispenseAsWritten:
           description: |-
             An indicator that the prescriber has instructed to dispense as written (DAW) code.
@@ -3957,7 +4694,7 @@ components:
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
         deaSchedule:
-          $ref: '#/components/schemas/DeaSchedule'
+          $ref: "#/components/schemas/DeaSchedule"
         diagnosis:
           deprecated: true
           description: |-
@@ -3966,12 +4703,12 @@ components:
 
             This shape is deprecated: This field will be replaced by `medicalDiagnosis`. This field will no longer be supported starting from 2025-03-12
           items:
-            $ref: '#/components/schemas/Diagnosis'
+            $ref: "#/components/schemas/Diagnosis"
           maxItems: 2
           minItems: 0
           type: array
         medicalDiagnosis:
-          $ref: '#/components/schemas/MedicalDiagnosis'
+          $ref: "#/components/schemas/MedicalDiagnosis"
         firstFillDate:
           deprecated: true
           description: |-
@@ -3998,7 +4735,6 @@ components:
           pattern: ^\s*\S.*$
           type: string
       required:
-      - daysSupply
       - directions
       - dispenseAsWritten
       - drugDescription
@@ -4019,20 +4755,20 @@ components:
         firstName:
           description: The first name of the person.
           maxLength: 255
-          pattern: "^(?=\\s*\\S)[\\sa-zA-Z0-9\\u00C0-\\u00FF.,/#!?$€￦￥￡₽¢^*;:{}=|\\\
-            -\\[\\]+_`~()@']+$"
+          pattern: "^(?=\\s*\\S)([\\sa-zA-Z0-9\\u00C0-\\u00FF.,/#!?$€￦￥￡₽¢^*;:{}=|\\\
+            \\\\-\\[\\]+_`~()@']+)$"
           type: string
         middleName:
           description: The middle name of the person.
           maxLength: 255
-          pattern: "^(?=\\s*\\S)[\\sa-zA-Z0-9\\u00C0-\\u00FF.,/#!?$€￦￥￡₽¢^*;:{}=|\\\
-            -\\[\\]+_`~()@']+$"
+          pattern: "^(?=\\s*\\S)([\\sa-zA-Z0-9\\u00C0-\\u00FF.,/#!?$€￦￥￡₽¢^*;:{}=|\\\
+            \\\\-\\[\\]+_`~()@']+)$"
           type: string
         lastName:
           description: The last name of the person.
           maxLength: 255
-          pattern: "^(?=\\s*\\S)[\\sa-zA-Z0-9\\u00C0-\\u00FF.,/#!?$€￦￥￡₽¢^*;:{}=|\\\
-            -\\[\\]+_`~()@']+$"
+          pattern: "^(?=\\s*\\S)([\\sa-zA-Z0-9\\u00C0-\\u00FF.,/#!?$€￦￥￡₽¢^*;:{}=|\\\
+            \\\\-\\[\\]+_`~()@']+)$"
           type: string
         suffix:
           description: "The suffix of the person's name (e.g., Jr., Sr., III)."
@@ -4047,6 +4783,43 @@ components:
       required:
       - firstName
       - lastName
+      type: object
+    Observation:
+      example:
+        observationNotes: observationNotes
+        measurement:
+        - vitalSign: HEIGHT
+          observationDate: observationDate
+          measurementUnitOfMeasure: measurementUnitOfMeasure
+          value: value
+        - vitalSign: HEIGHT
+          observationDate: observationDate
+          measurementUnitOfMeasure: measurementUnitOfMeasure
+          value: value
+        - vitalSign: HEIGHT
+          observationDate: observationDate
+          measurementUnitOfMeasure: measurementUnitOfMeasure
+          value: value
+        - vitalSign: HEIGHT
+          observationDate: observationDate
+          measurementUnitOfMeasure: measurementUnitOfMeasure
+          value: value
+        - vitalSign: HEIGHT
+          observationDate: observationDate
+          measurementUnitOfMeasure: measurementUnitOfMeasure
+          value: value
+      properties:
+        measurement:
+          description: Used to record patient's vital signs such as weight and height
+          items:
+            $ref: "#/components/schemas/Measurement"
+          maxItems: 10
+          type: array
+        observationNotes:
+          description: Additional notes or comments related to the vital sign observations
+          maxLength: 140
+          minLength: 1
+          type: string
       type: object
     Order:
       description: Structure representing an order.
@@ -4105,21 +4878,21 @@ components:
         filledDate: filledDate
       properties:
         status:
-          $ref: '#/components/schemas/OrderStatus'
+          $ref: "#/components/schemas/OrderStatus"
         partnerPrescriptionId:
           description: The partner ID of the prescription this order is associated
             with.
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         statusReasonCode:
-          $ref: '#/components/schemas/OrderStatusReasonCode'
+          $ref: "#/components/schemas/OrderStatusReasonCode"
         statusDescription:
           description: A more detailed explanation of the order's status.
           maxLength: 255
           pattern: ^\s*\S.*$
           type: string
         additionalOrderDetails:
-          $ref: '#/components/schemas/AdditionalOrderDetails'
+          $ref: "#/components/schemas/AdditionalOrderDetails"
         filledDate:
           description: "The date the fill was created, in the format 'YYYY-MM-DD'."
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
@@ -4176,7 +4949,7 @@ components:
           pattern: "^\\d{6}$"
           type: string
         payerType:
-          $ref: '#/components/schemas/PayerType'
+          $ref: "#/components/schemas/PayerType"
         payerName:
           description: The name of the payer associated with the insurance plan.
           maxLength: 255
@@ -4197,7 +4970,7 @@ components:
           pattern: "^[0-9]*$"
           type: string
         relationshipCode:
-          $ref: '#/components/schemas/PatientRelationship'
+          $ref: "#/components/schemas/PatientRelationship"
         startDate:
           description: Start date for the insurance coverage. This indicates when
             the insurance coverage begins.
@@ -4219,7 +4992,6 @@ components:
           type: string
       required:
       - binNumber
-      - cardholderId
       - personCode
       type: object
     OrderInsuranceDetails:
@@ -4253,9 +5025,9 @@ components:
           startDate: startDate
       properties:
         primary:
-          $ref: '#/components/schemas/OrderInsurance'
+          $ref: "#/components/schemas/OrderInsurance"
         secondary:
-          $ref: '#/components/schemas/OrderInsurance'
+          $ref: "#/components/schemas/OrderInsurance"
       required:
       - primary
       type: object
@@ -4308,6 +5080,8 @@ components:
 
         `PAYMENT_DECLINED` - The payment for the order was hard-declined.
 
+        `INVALID_DELIVERY_ADDRESS` - The address is not valid, e.g. Amazon Pharmacy does not deliver to PO Boxes.
+
         `INTERNAL_ERROR` - An internal error occurred during order processing.
 
         `MISSING_PAYMENT_METHOD` - The actual copay was greater than the quoted copay, and the payment method is missing.
@@ -4329,6 +5103,7 @@ components:
       - PHARMACY_PROFILE_INCOMPLETE
       - NO_FILLABLE_PRESCRIPTION
       - PAYMENT_DECLINED
+      - INVALID_DELIVERY_ADDRESS
       - INTERNAL_ERROR
       - MISSING_PAYMENT_METHOD
       - PENDING_PAYMENT_METHOD_AND_CHECKOUT_FROM_CUSTOMER
@@ -4377,31 +5152,31 @@ components:
         status: PATIENT_RECEIVED
       properties:
         status:
-          $ref: '#/components/schemas/PatientStatus'
+          $ref: "#/components/schemas/PatientStatus"
         statusReasonCode:
-          $ref: '#/components/schemas/PatientStatusReasonCode'
+          $ref: "#/components/schemas/PatientStatusReasonCode"
         statusDescription:
           description: A human-readable description of the patient's status.
           maxLength: 255
           pattern: ^\s*\S.*$
           type: string
         name:
-          $ref: '#/components/schemas/Name'
+          $ref: "#/components/schemas/Name"
         dateOfBirth:
           description: Patient's date of birth in the format 'yyyy-mm-dd'.
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
         sexAssignedAtBirth:
-          $ref: '#/components/schemas/SexAssignedAtBirth'
+          $ref: "#/components/schemas/SexAssignedAtBirth"
         contactInfo:
           description: List of contact information of the patient.
           items:
-            $ref: '#/components/schemas/ContactInfo'
+            $ref: "#/components/schemas/ContactInfo"
           maxItems: 5
           minItems: 1
           type: array
         residentialAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         email:
           description: Email address of the patient.
           maxLength: 255
@@ -4561,17 +5336,17 @@ components:
         email: email
       properties:
         name:
-          $ref: '#/components/schemas/Name'
+          $ref: "#/components/schemas/Name"
         dateOfBirth:
           description: Patient's date of birth in the format 'yyyy-mm-dd'.
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
         sexAssignedAtBirth:
-          $ref: '#/components/schemas/SexAssignedAtBirth'
+          $ref: "#/components/schemas/SexAssignedAtBirth"
         contactInfo:
           description: List of contact information of the patient.
           items:
-            $ref: '#/components/schemas/ContactInfo'
+            $ref: "#/components/schemas/ContactInfo"
           maxItems: 5
           minItems: 1
           type: array
@@ -4589,13 +5364,13 @@ components:
             other communication.
           type: boolean
         allergyDetails:
-          $ref: '#/components/schemas/AllergyDetails'
+          $ref: "#/components/schemas/AllergyDetails"
         existingMedicalConditionDetails:
-          $ref: '#/components/schemas/ExistingMedicalConditionsDetails'
+          $ref: "#/components/schemas/ExistingMedicalConditionsDetails"
         pregnancyStatus:
-          $ref: '#/components/schemas/PregnancyStatus'
+          $ref: "#/components/schemas/PregnancyStatus"
         existingMedicationDetails:
-          $ref: '#/components/schemas/ExistingMedicationDetails'
+          $ref: "#/components/schemas/ExistingMedicationDetails"
       required:
       - allergyDetails
       - contactInfo
@@ -4603,8 +5378,6 @@ components:
       - existingMedicalConditionDetails
       - name
       - pregnancyStatus
-      - sexAssignedAtBirth
-      - smsConsent
       type: object
     PatientRelationship:
       description: |-
@@ -4790,9 +5563,9 @@ components:
           pattern: ^\s*\S.*$
           type: string
         pharmacistName:
-          $ref: '#/components/schemas/Name'
+          $ref: "#/components/schemas/Name"
         pharmacyAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         primaryTelephone:
           description: Pharmacy telephone number.
           pattern: "^1?[2-9]\\d{2}[2-9]\\d{6}$"
@@ -4866,7 +5639,7 @@ components:
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         transferToPharmacy:
-          $ref: '#/components/schemas/TransferToPharmacy'
+          $ref: "#/components/schemas/TransferToPharmacy"
         reasonForTransfer:
           description: The reason for transferring out this prescription.
           maxLength: 255
@@ -4882,7 +5655,7 @@ components:
         transferRequestStatus: TRANSFER_INITIATED
       properties:
         transferRequestStatus:
-          $ref: '#/components/schemas/TransferRequestStatus'
+          $ref: "#/components/schemas/TransferRequestStatus"
       required:
       - transferRequestStatus
       type: object
@@ -4944,11 +5717,11 @@ components:
           pattern: ^\s*\S.*$
           type: string
         errorCode:
-          $ref: '#/components/schemas/PreconditionErrorCode'
+          $ref: "#/components/schemas/PreconditionErrorCode"
         errorFieldList:
           description: "List of fields responsible for the error, if applicable."
           items:
-            $ref: '#/components/schemas/ErrorField'
+            $ref: "#/components/schemas/ErrorField"
           type: array
       required:
       - errorCode
@@ -5002,9 +5775,9 @@ components:
           pattern: ^\s*\S.*$
           type: string
         prescriberName:
-          $ref: '#/components/schemas/Name'
+          $ref: "#/components/schemas/Name"
         prescriberAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         primaryTelephone:
           description: The primary telephone number of the prescriber.
           pattern: "^1?[2-9]\\d{2}[2-9]\\d{6}$"
@@ -5118,14 +5891,14 @@ components:
         status: PRESCRIPTION_RECEIVED
       properties:
         status:
-          $ref: '#/components/schemas/PrescriptionStatus'
+          $ref: "#/components/schemas/PrescriptionStatus"
         statusDescription:
           description: A more detailed explanation of the prescription's status.
           maxLength: 255
           pattern: ^\s*\S.*$
           type: string
         amazonPharmacy:
-          $ref: '#/components/schemas/Pharmacy'
+          $ref: "#/components/schemas/Pharmacy"
         drugUnits:
           description: "Unit of the drug quantity, e.g., Caps/Tabs/ML/Dev."
           maxLength: 255
@@ -5155,16 +5928,16 @@ components:
           pattern: ^\s*\S.*$
           type: string
         transferRequestStatus:
-          $ref: '#/components/schemas/TransferRequestStatus'
+          $ref: "#/components/schemas/TransferRequestStatus"
         totalQuantityRemaining:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
         fills:
           description: A list of fills for this prescription
           items:
-            $ref: '#/components/schemas/PrescriptionFill'
+            $ref: "#/components/schemas/PrescriptionFill"
           type: array
         prescriber:
-          $ref: '#/components/schemas/Prescriber'
+          $ref: "#/components/schemas/Prescriber"
       required:
       - amazonPharmacy
       - status
@@ -5207,12 +5980,12 @@ components:
             d{2}:\\d{2})$"
           type: string
         status:
-          $ref: '#/components/schemas/PrescriptionFillStatus'
+          $ref: "#/components/schemas/PrescriptionFillStatus"
         daysSupply:
           description: The number of days supply for this fill.
           type: number
         quantity:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
       required:
       - fillNumber
       - status
@@ -5407,9 +6180,9 @@ components:
             unitOfMeasureCode: unitOfMeasureCode
       properties:
         sendingPharmacy:
-          $ref: '#/components/schemas/Pharmacy'
+          $ref: "#/components/schemas/Pharmacy"
         prescriptionTransferred:
-          $ref: '#/components/schemas/PrescriptionTransferred'
+          $ref: "#/components/schemas/PrescriptionTransferred"
       required:
       - prescriptionTransferred
       - sendingPharmacy
@@ -5507,7 +6280,7 @@ components:
           unitOfMeasureCode: unitOfMeasureCode
       properties:
         prescriptionFillTransferInType:
-          $ref: '#/components/schemas/PrescriptionFillTransferInType'
+          $ref: "#/components/schemas/PrescriptionFillTransferInType"
         firstFillDate:
           description: |-
             The date on which the prescription was first filled by the pharmacy, in the format 'YYYY-MM-DD'.
@@ -5524,20 +6297,19 @@ components:
           type: string
         refillsRemaining:
           description: |-
-            The number of refills left on the prescription.
+            The number of refills left on the prescription including the first fill.
             This field will be marked as required for both NewRx and previously dispensed Rx starting from 2025-03-12.
           format: double
           type: number
         refillsTransferred:
-          description: |-
-            The number of refills being transferred to Amazon Pharmacy.
-            This field will be marked as required for both NewRx and previously dispensed Rx starting from 2025-03-12.
+          description: The number of refills being transferred to Amazon Pharmacy
+            including the first fill.
           format: double
           type: number
         quantityTransferred:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
         quantityRemaining:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
         previousDispensedMedications:
           description: |-
             Contains information about previous medication dispenses for the prescription.
@@ -5546,7 +6318,7 @@ components:
             When PrescriptionFillTransferInType.DISPENSED_BEFORE is true, this object must contain either at least one aggregate dispense detail or a list of unique previous dispenses.
             This field will be marked as required for previously dispensed Rx starting from 2025-03-12.
           items:
-            $ref: '#/components/schemas/PreviousDispensedMedication'
+            $ref: "#/components/schemas/PreviousDispensedMedication"
           maxItems: 300
           minItems: 0
           type: array
@@ -5587,9 +6359,9 @@ components:
           pattern: "^\\d{11}$"
           type: string
         drugDbCode:
-          $ref: '#/components/schemas/DrugDbCode'
+          $ref: "#/components/schemas/DrugDbCode"
         quantity:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
         daysSupply:
           description: Estimated number of days a prescription would last.
           type: number
@@ -5666,7 +6438,7 @@ components:
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         shippingAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         partnerPaymentInstrumentId:
           description: |-
             Customer's payment instrument ID, previously created using the payment-instrument API.
@@ -5686,7 +6458,7 @@ components:
           pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
           type: string
         orderInsuranceDetails:
-          $ref: '#/components/schemas/OrderInsuranceDetails'
+          $ref: "#/components/schemas/OrderInsuranceDetails"
       required:
       - partnerOrderId
       - partnerPrescriptionId
@@ -5708,65 +6480,70 @@ components:
       description: Structure representing the PutPatient API request.
       example:
         insurances:
-        - expiryDate: expiryDate
-          payerType: COMMERCIAL
+        - cardholderId: cardholderId
           encryptedCardholderId: encryptedCardholderId
           binNumber: binNumber
-          payerName: payerName
-          pcn: pcn
-          stateCode: stateCode
           relationshipCode: NOT_SPECIFIED
           groupNumber: groupNumber
           partnerInsuranceId: partnerInsuranceId
           personCode: personCode
+          expiryDate: expiryDate
+          payerType: COMMERCIAL
+          payerName: payerName
+          pcn: pcn
+          stateCode: stateCode
           startDate: startDate
-        - expiryDate: expiryDate
-          payerType: COMMERCIAL
+        - cardholderId: cardholderId
           encryptedCardholderId: encryptedCardholderId
           binNumber: binNumber
-          payerName: payerName
-          pcn: pcn
-          stateCode: stateCode
           relationshipCode: NOT_SPECIFIED
           groupNumber: groupNumber
           partnerInsuranceId: partnerInsuranceId
           personCode: personCode
+          expiryDate: expiryDate
+          payerType: COMMERCIAL
+          payerName: payerName
+          pcn: pcn
+          stateCode: stateCode
           startDate: startDate
-        - expiryDate: expiryDate
-          payerType: COMMERCIAL
+        - cardholderId: cardholderId
           encryptedCardholderId: encryptedCardholderId
           binNumber: binNumber
-          payerName: payerName
-          pcn: pcn
-          stateCode: stateCode
           relationshipCode: NOT_SPECIFIED
           groupNumber: groupNumber
           partnerInsuranceId: partnerInsuranceId
           personCode: personCode
+          expiryDate: expiryDate
+          payerType: COMMERCIAL
+          payerName: payerName
+          pcn: pcn
+          stateCode: stateCode
           startDate: startDate
-        - expiryDate: expiryDate
-          payerType: COMMERCIAL
+        - cardholderId: cardholderId
           encryptedCardholderId: encryptedCardholderId
           binNumber: binNumber
-          payerName: payerName
-          pcn: pcn
-          stateCode: stateCode
           relationshipCode: NOT_SPECIFIED
           groupNumber: groupNumber
           partnerInsuranceId: partnerInsuranceId
           personCode: personCode
+          expiryDate: expiryDate
+          payerType: COMMERCIAL
+          payerName: payerName
+          pcn: pcn
+          stateCode: stateCode
           startDate: startDate
-        - expiryDate: expiryDate
-          payerType: COMMERCIAL
+        - cardholderId: cardholderId
           encryptedCardholderId: encryptedCardholderId
           binNumber: binNumber
-          payerName: payerName
-          pcn: pcn
-          stateCode: stateCode
           relationshipCode: NOT_SPECIFIED
           groupNumber: groupNumber
           partnerInsuranceId: partnerInsuranceId
           personCode: personCode
+          expiryDate: expiryDate
+          payerType: COMMERCIAL
+          payerName: payerName
+          pcn: pcn
+          stateCode: stateCode
           startDate: startDate
         residentialAddress:
           zipCode: zipCode
@@ -5923,13 +6700,13 @@ components:
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         patientDetails:
-          $ref: '#/components/schemas/PatientDetails'
+          $ref: "#/components/schemas/PatientDetails"
         residentialAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         insurances:
           description: List of insurances for this patient.
           items:
-            $ref: '#/components/schemas/Insurance'
+            $ref: "#/components/schemas/Insurance"
           maxItems: 27
           minItems: 0
           type: array
@@ -5980,11 +6757,11 @@ components:
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         paymentMethod:
-          $ref: '#/components/schemas/PaymentMethod'
+          $ref: "#/components/schemas/PaymentMethod"
         cardDetails:
-          $ref: '#/components/schemas/CardDetails'
+          $ref: "#/components/schemas/CardDetails"
         billingAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
       required:
       - billingAddress
       - cardDetails
@@ -6219,6 +6996,29 @@ components:
             middleName: middleName
             suffix: suffix
           fax: fax
+        observation:
+          observationNotes: observationNotes
+          measurement:
+          - vitalSign: HEIGHT
+            observationDate: observationDate
+            measurementUnitOfMeasure: measurementUnitOfMeasure
+            value: value
+          - vitalSign: HEIGHT
+            observationDate: observationDate
+            measurementUnitOfMeasure: measurementUnitOfMeasure
+            value: value
+          - vitalSign: HEIGHT
+            observationDate: observationDate
+            measurementUnitOfMeasure: measurementUnitOfMeasure
+            value: value
+          - vitalSign: HEIGHT
+            observationDate: observationDate
+            measurementUnitOfMeasure: measurementUnitOfMeasure
+            value: value
+          - vitalSign: HEIGHT
+            observationDate: observationDate
+            measurementUnitOfMeasure: measurementUnitOfMeasure
+            value: value
         supervisingPhysician:
           primaryTelephone: primaryTelephone
           deaNumber: deaNumber
@@ -6251,17 +7051,19 @@ components:
           pattern: "^[0-9a-zA-Z-]{1,40}$"
           type: string
         prescriber:
-          $ref: '#/components/schemas/Prescriber'
+          $ref: "#/components/schemas/Prescriber"
         supervisingPhysician:
-          $ref: '#/components/schemas/Prescriber'
+          $ref: "#/components/schemas/Prescriber"
         medicationPrescribed:
-          $ref: '#/components/schemas/MedicationPrescribed'
+          $ref: "#/components/schemas/MedicationPrescribed"
         sendingPharmacy:
-          $ref: '#/components/schemas/Pharmacy'
+          $ref: "#/components/schemas/Pharmacy"
         prescriptionTransferInDetails:
-          $ref: '#/components/schemas/PrescriptionTransferInDetails'
+          $ref: "#/components/schemas/PrescriptionTransferInDetails"
         receivingPharmacy:
-          $ref: '#/components/schemas/Pharmacy'
+          $ref: "#/components/schemas/Pharmacy"
+        observation:
+          $ref: "#/components/schemas/Observation"
       required:
       - medicationPrescribed
       - partnerPatientId
@@ -6295,7 +7097,7 @@ components:
         partnerPrescriptionId: partnerPrescriptionId
       properties:
         receivingPharmacy:
-          $ref: '#/components/schemas/Pharmacy'
+          $ref: "#/components/schemas/Pharmacy"
         partnerPrescriptionId:
           description: The partner Prescription ID of the added prescription.
           pattern: "^[0-9a-zA-Z-]{1,40}$"
@@ -6325,11 +7127,10 @@ components:
           pattern: ^\s*\S.*$
           type: string
         quantityUnitOfMeasureCode:
-          $ref: '#/components/schemas/QuantityUnitOfMeasureCode'
+          $ref: "#/components/schemas/QuantityUnitOfMeasureCode"
         codeListQualifier:
-          $ref: '#/components/schemas/QuantityCodeListQualifier'
+          $ref: "#/components/schemas/QuantityCodeListQualifier"
       required:
-      - unitOfMeasureCode
       - value
       type: object
     QuantityCodeListQualifier:
@@ -6479,7 +7280,7 @@ components:
           pattern: "^\\d{6}$"
           type: string
         payerType:
-          $ref: '#/components/schemas/PayerType'
+          $ref: "#/components/schemas/PayerType"
         payerName:
           description: The name of the payer associated with the insurance plan.
           maxLength: 255
@@ -6567,7 +7368,7 @@ components:
           pattern: ^\s*\S.*$
           type: string
         strengthFormCode:
-          $ref: '#/components/schemas/StrengthFormCode'
+          $ref: "#/components/schemas/StrengthFormCode"
         unitOfMeasureCode:
           deprecated: true
           description: |-
@@ -6577,7 +7378,7 @@ components:
           pattern: ^\s*\S.*$
           type: string
         strengthUnitOfMeasureCode:
-          $ref: '#/components/schemas/StrengthUnitOfMeasureCode'
+          $ref: "#/components/schemas/StrengthUnitOfMeasureCode"
       type: object
     StrengthFormCode:
       description: |-
@@ -7910,9 +8711,9 @@ components:
           pattern: ^\s*\S.*$
           type: string
         pharmacistName:
-          $ref: '#/components/schemas/Name'
+          $ref: "#/components/schemas/Name"
         pharmacyAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
         primaryTelephone:
           description: Pharmacy telephone number.
           pattern: "^1?[2-9]\\d{2}[2-9]\\d{6}$"
@@ -7931,10 +8732,16 @@ components:
       - pharmacyName
       - primaryTelephone
       type: object
+    VitalSign:
+      description: Specifies the type of vital sign measurement
+      enum:
+      - HEIGHT
+      - WEIGHT
+      type: string
     PutOrder_400_response:
       anyOf:
-      - $ref: '#/components/schemas/PreconditionFailedExceptionResponseContent'
-      - $ref: '#/components/schemas/InvalidInputExceptionResponseContent'
+      - $ref: "#/components/schemas/PreconditionFailedExceptionResponseContent"
+      - $ref: "#/components/schemas/InvalidInputExceptionResponseContent"
     PutOrder_502_response:
       example:
         message: message

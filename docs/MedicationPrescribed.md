@@ -8,9 +8,9 @@ Name | Type | Description | Notes
 **LabelerName** | Pointer to **string** | Drug labeler/manufacturer name. | [optional] 
 **Quantity** | [**Quantity**](Quantity.md) |  | 
 **Strength** | Pointer to [**Strength**](Strength.md) |  | [optional] 
-**DaysSupply** | **float64** | Estimated number of days a prescription would last. | 
+**DaysSupply** | Pointer to **float64** | Estimated number of days a prescription would last. | [optional] 
 **WrittenDate** | **string** | The date on which the prescriber wrote the prescription, quoted in the format &#39;YYYY-MM-DD&#39;. | 
-**NumberOfRefills** | **float64** | The number of refills allowed for this prescription. | 
+**NumberOfRefills** | **float64** | The number of refills allowed for this prescription excluding the first fill. | 
 **Directions** | **string** | Clinical directions meaningful to the patient as written by the prescriber, e.g., &#39;Take 1 tablet by mouth once weekly.&#39; | 
 **Ndc** | **string** | The National Drug Code of the medication, without dashes or spaces. | 
 **Rxcui** | Pointer to **string** | RxNorm concept unique identifier. This shape is deprecated: RxNorm codes are included in drugDbCode field. This field will no longer be supported starting from 2025-03-12. | [optional] 
@@ -29,7 +29,7 @@ Name | Type | Description | Notes
 
 ### NewMedicationPrescribed
 
-`func NewMedicationPrescribed(drugDescription string, quantity Quantity, daysSupply float64, writtenDate string, numberOfRefills float64, directions string, ndc string, dispenseAsWritten string, ) *MedicationPrescribed`
+`func NewMedicationPrescribed(drugDescription string, quantity Quantity, writtenDate string, numberOfRefills float64, directions string, ndc string, dispenseAsWritten string, ) *MedicationPrescribed`
 
 NewMedicationPrescribed instantiates a new MedicationPrescribed object
 This constructor will assign default values to properties that have it defined,
@@ -153,6 +153,11 @@ and a boolean to check if the value has been set.
 
 SetDaysSupply sets DaysSupply field to given value.
 
+### HasDaysSupply
+
+`func (o *MedicationPrescribed) HasDaysSupply() bool`
+
+HasDaysSupply returns a boolean if a field has been set.
 
 ### GetWrittenDate
 

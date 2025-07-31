@@ -6,11 +6,11 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Name** | [**Name**](Name.md) |  | 
 **DateOfBirth** | **string** | Patient&#39;s date of birth in the format &#39;yyyy-mm-dd&#39;. | 
-**SexAssignedAtBirth** | [**SexAssignedAtBirth**](SexAssignedAtBirth.md) |  | 
+**SexAssignedAtBirth** | Pointer to [**SexAssignedAtBirth**](SexAssignedAtBirth.md) |  | [optional] 
 **ContactInfo** | [**[]ContactInfo**](ContactInfo.md) | List of contact information of the patient. | 
 **Gender** | Pointer to **string** | Gender of the patient. | [optional] 
 **Email** | Pointer to **string** | Email address of the patient. | [optional] 
-**SmsConsent** | **bool** | Patient&#39;s consent to receive SMS notifications for signup and other communication. | 
+**SmsConsent** | Pointer to **bool** | Patient&#39;s consent to receive SMS notifications for signup and other communication. | [optional] 
 **AllergyDetails** | [**AllergyDetails**](AllergyDetails.md) |  | 
 **ExistingMedicalConditionDetails** | [**ExistingMedicalConditionsDetails**](ExistingMedicalConditionsDetails.md) |  | 
 **PregnancyStatus** | [**PregnancyStatus**](PregnancyStatus.md) |  | 
@@ -20,7 +20,7 @@ Name | Type | Description | Notes
 
 ### NewPatientDetails
 
-`func NewPatientDetails(name Name, dateOfBirth string, sexAssignedAtBirth SexAssignedAtBirth, contactInfo []ContactInfo, smsConsent bool, allergyDetails AllergyDetails, existingMedicalConditionDetails ExistingMedicalConditionsDetails, pregnancyStatus PregnancyStatus, ) *PatientDetails`
+`func NewPatientDetails(name Name, dateOfBirth string, contactInfo []ContactInfo, allergyDetails AllergyDetails, existingMedicalConditionDetails ExistingMedicalConditionsDetails, pregnancyStatus PregnancyStatus, ) *PatientDetails`
 
 NewPatientDetails instantiates a new PatientDetails object
 This constructor will assign default values to properties that have it defined,
@@ -94,6 +94,11 @@ and a boolean to check if the value has been set.
 
 SetSexAssignedAtBirth sets SexAssignedAtBirth field to given value.
 
+### HasSexAssignedAtBirth
+
+`func (o *PatientDetails) HasSexAssignedAtBirth() bool`
+
+HasSexAssignedAtBirth returns a boolean if a field has been set.
 
 ### GetContactInfo
 
@@ -184,6 +189,11 @@ and a boolean to check if the value has been set.
 
 SetSmsConsent sets SmsConsent field to given value.
 
+### HasSmsConsent
+
+`func (o *PatientDetails) HasSmsConsent() bool`
+
+HasSmsConsent returns a boolean if a field has been set.
 
 ### GetAllergyDetails
 
