@@ -14,14 +14,15 @@ Name | Type | Description | Notes
 **RelationshipCode** | Pointer to [**PatientRelationship**](PatientRelationship.md) |  | [optional] 
 **StartDate** | Pointer to **string** | Start date for the insurance coverage. This indicates when the insurance coverage begins. | [optional] 
 **ExpiryDate** | Pointer to **string** | Expiration date for the insurance coverage. This indicates when the insurance will no longer be valid. | [optional] 
+**CardholderId** | Pointer to **string** | The memberId of this person&#39;s insurance information. It includes their suffix and is the primary identifier for their insurance coverage. Must be alphanumeric and between 1 to 20 characters. | [optional] 
 **PartnerInsuranceId** | **string** | A unique identifier to identify the partner-provided insurance. | 
-**EncryptedCardholderId** | **string** | Insurance card number encrypted using the patient-information-encryption-key. The unencrypted value cannot exceed 20 characters. | 
+**EncryptedCardholderId** | Pointer to **string** | Deprecated, use cardholderId instead. One of unencrypted or encrypted cardholder is required. Insurance card number encrypted using the patient-information-encryption-key. The unencrypted value cannot exceed 20 characters.  This shape is deprecated. | [optional] 
 
 ## Methods
 
 ### NewInsurance
 
-`func NewInsurance(binNumber string, personCode string, partnerInsuranceId string, encryptedCardholderId string, ) *Insurance`
+`func NewInsurance(binNumber string, personCode string, partnerInsuranceId string, ) *Insurance`
 
 NewInsurance instantiates a new Insurance object
 This constructor will assign default values to properties that have it defined,
@@ -276,6 +277,31 @@ SetExpiryDate sets ExpiryDate field to given value.
 
 HasExpiryDate returns a boolean if a field has been set.
 
+### GetCardholderId
+
+`func (o *Insurance) GetCardholderId() string`
+
+GetCardholderId returns the CardholderId field if non-nil, zero value otherwise.
+
+### GetCardholderIdOk
+
+`func (o *Insurance) GetCardholderIdOk() (*string, bool)`
+
+GetCardholderIdOk returns a tuple with the CardholderId field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCardholderId
+
+`func (o *Insurance) SetCardholderId(v string)`
+
+SetCardholderId sets CardholderId field to given value.
+
+### HasCardholderId
+
+`func (o *Insurance) HasCardholderId() bool`
+
+HasCardholderId returns a boolean if a field has been set.
+
 ### GetPartnerInsuranceId
 
 `func (o *Insurance) GetPartnerInsuranceId() string`
@@ -315,6 +341,11 @@ and a boolean to check if the value has been set.
 
 SetEncryptedCardholderId sets EncryptedCardholderId field to given value.
 
+### HasEncryptedCardholderId
+
+`func (o *Insurance) HasEncryptedCardholderId() bool`
+
+HasEncryptedCardholderId returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

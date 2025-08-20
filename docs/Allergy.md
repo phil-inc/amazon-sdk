@@ -4,15 +4,15 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Code** | **string** | Patient&#39;s allergy code, Allergy code should follow the AllergyCodeType input&#39;s standard code format. | 
-**CodeType** | [**AllergyCodeType**](AllergyCodeType.md) |  | 
+**Code** | Pointer to **string** | Patient&#39;s allergy code, Allergy code should follow the AllergyCodeType input&#39;s standard code format. | [optional] 
+**CodeType** | Pointer to [**AllergyCodeType**](AllergyCodeType.md) |  | [optional] 
 **TextValue** | **string** | A human-readable text value of the allergy. Eg, Peanut Allergy | 
 
 ## Methods
 
 ### NewAllergy
 
-`func NewAllergy(code string, codeType AllergyCodeType, textValue string, ) *Allergy`
+`func NewAllergy(textValue string, ) *Allergy`
 
 NewAllergy instantiates a new Allergy object
 This constructor will assign default values to properties that have it defined,
@@ -46,6 +46,11 @@ and a boolean to check if the value has been set.
 
 SetCode sets Code field to given value.
 
+### HasCode
+
+`func (o *Allergy) HasCode() bool`
+
+HasCode returns a boolean if a field has been set.
 
 ### GetCodeType
 
@@ -66,6 +71,11 @@ and a boolean to check if the value has been set.
 
 SetCodeType sets CodeType field to given value.
 
+### HasCodeType
+
+`func (o *Allergy) HasCodeType() bool`
+
+HasCodeType returns a boolean if a field has been set.
 
 ### GetTextValue
 

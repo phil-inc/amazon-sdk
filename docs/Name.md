@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **FirstName** | **string** | The first name of the person. | 
 **MiddleName** | Pointer to **string** | The middle name of the person. | [optional] 
 **LastName** | **string** | The last name of the person. | 
-**Suffix** | Pointer to **string** | The suffix of the person&#39;s name (e.g., Jr., Sr., III). | [optional] 
+**Suffix** | Pointer to **string** | The suffix of the person&#39;s name.     For a patient, the only valid values are I, II, III, IV, V, Jr, Sr, or None and they are case insensitive. | [optional] 
 **Prefix** | Pointer to **string** | The prefix of the person&#39;s name (e.g., Dr., Mr., Mrs.). | [optional] 
 
 ## Methods

@@ -14,13 +14,13 @@ Name | Type | Description | Notes
 **RelationshipCode** | Pointer to [**PatientRelationship**](PatientRelationship.md) |  | [optional] 
 **StartDate** | Pointer to **string** | Start date for the insurance coverage. This indicates when the insurance coverage begins. | [optional] 
 **ExpiryDate** | Pointer to **string** | Expiration date for the insurance coverage. This indicates when the insurance will no longer be valid. | [optional] 
-**CardholderId** | **string** | The memberId of this person&#39;s insurance information. It includes their suffix and is the primary identifier for their insurance coverage. Must be alphanumeric and between 1 to 20 characters. | 
+**CardholderId** | Pointer to **string** | The memberId of this person&#39;s insurance information. It includes their suffix and is the primary identifier for their insurance coverage. Must be alphanumeric and between 1 to 20 characters. | [optional] 
 
 ## Methods
 
 ### NewOrderInsurance
 
-`func NewOrderInsurance(binNumber string, personCode string, cardholderId string, ) *OrderInsurance`
+`func NewOrderInsurance(binNumber string, personCode string, ) *OrderInsurance`
 
 NewOrderInsurance instantiates a new OrderInsurance object
 This constructor will assign default values to properties that have it defined,
@@ -294,6 +294,11 @@ and a boolean to check if the value has been set.
 
 SetCardholderId sets CardholderId field to given value.
 
+### HasCardholderId
+
+`func (o *OrderInsurance) HasCardholderId() bool`
+
+HasCardholderId returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -9,6 +9,94 @@ Amazon Pharmacy APIs provide the following functionalities for external partners
 - Prescription transfer request creation
 
 ## Changelog for the Amazon Pharmacy APIs (from version 1.15.3):
+
+### 2025-08-15 v1.23.1
+#### Added:
+- Added `DUR_REVIEW_IN_PROGRESS` to `OrderStatusReasonCode`.
+- This is a new status reason code to be returned for ORDER_FAILED and indicates the order is under DUR (Drug Utilization Review). Please retry placing the order using PutOrder API in 2-4 hours
+
+### 2025-08-05 v1.23.0
+#### Changed:
+- Updated validation rules for prescriber partners:
+  - Allergies: Allow NOT_AVAILABLE in patient data when no allergy data is provided by the prescriber
+  - Medical conditions: Must always be set as NOT_AVAILABLE
+
+### 2025-08-01 v1.22.0
+#### Changed:
+- Updated `MedicationPrescribed` structure in `PutPrescription API`:
+  - Modified `writtenDate`, `effectiveDate`, and `expirationDate` fields to accept both UTC DateTime (YYYY-MM-DDTHH:MM:SSZ) and simple Date (YYYY-MM-DD) formats
+  - Added recommendations to use DateTime over simple Date format
+- Updated API examples to demonstrate both supported formats
+
+### 2025-07-16 v1.21.0
+#### Added:
+- Enhanced diagnosis code support in PutPrescription API:
+  - New optional `codeWithQualifier` field in `DiagnosisCode` structure to support additional code systems
+  - Made `icd10Code` field optional for prescriber partners when `codeWithQualifier` is provided
+- Added example payloads demonstrating usage of new fields
+
+#### Changed:
+- Updated `Allergy` structure to make the `code` and `codeType` fields optional in `PutPatient API`, allowing prescriber partners to omit these fields when calling the PutPatient API
+- Updated documentation to reflect new code system options and field requirements
+- Improved documentation on `Name` field by making patient-specific suffix checks explicit
+
+### 2025-07-14 v1.20.1
+#### Changed:
+- Updated the regex pattern for `patientDetails.name`, `prescriber.prescriberName`, `pharmacist.pharmacistName` field to accept special characters like `-`, `'`, `.` for `firstName`, `middleName`, `lastName` subfields.
+
+### 2025-07-07 v1.20.0
+#### Added:
+- Added `INVALID_DELIVERY_ADDRESS` to `OrderStatusReasonCode`.
+
+#### Changed:
+- Updated `MedicationPrescribed` structure to make the `daysSupply` field optional in `PutPrescription API`, allowing prescriber partners to omit this field when calling the PutPrescription API
+
+### 2025-07-01 v1.19.0
+#### Added:
+- Asynchronous notifications for orders
+- Added documentation in `PutOrder` callback with `EventNotification` schema which signifies notification structure
+
+#### Notes:
+- Order notifications are available for below order statuses for orders created through `PutOrder` API
+  - ORDER_CREATED
+  - ORDER_PROCESSING
+  - ORDER_ON_HOLD
+  - ORDER_SHIPPED
+  - ORDER_CANCELLED
+  - ORDER_FAILED
+
+### 2025-06-19 v1.18.2
+#### Changed:
+- Updated `PatientDetails` structure to make the `sexAssignedAtBirth` field optional in `PutPatient API`, allowing partners to omit this field when calling the PutPatient API; however, this field will continue to be mandatory for hub partners who manage orders on behalf of customers
+
+### 2025-06-10 v1.18.1
+#### Changed:
+- Removed mandatory requirement for the deprecated `unitOfMeasureCode` field in `Quantity`.
+- Updated documentation for quantity and refill fields.
+- Added comprehensive examples covering various prescription transfer scenarios.
+- Updated documentation to reflect optional status of `refillsTransferred` field.
+
+### 2025-06-03 v1.18.0
+#### Added:
+- Added optional field `Observation` in PutPrescriptionRequest to support vital signs data.
+- Added new structures:
+  - `Observation` with measurement list and notes
+  - `Measurement` with vital sign, value, unit, and date fields
+  - `VitalSign` enum supporting HEIGHT and WEIGHT measurements
+- Updated `PutPrescription` API examples to demonstrate usage of Observation structure with height and weight measurements.
+
+ #### Changed:
+ - Updated `PatientDetails` structure to make the `smsConsent` field optional, allowing partners to omit this field when calling the PutPatient API. When not provided, `smsConsent` defaults to `false`.
+
+### 2025-03-24 v1.17.0
+#### Added:
+- Asynchronous notifications for prescriptions.
+- Added documentation in `PutPrescription` callback with `EventNotification` schema which signifies notification structure
+
+#### Changed:
+- `Insurance` now supports `cardholderId`.
+- `Insurance` and `OrderInsurance` field `encryptedCardholderId` is now deprecated. Please use `cardholderId` instead for `PutPatient` and `PutOrder` calls.
+
 ### 2025-03-26 v1.16.4
 #### Added:
 - Added prescriber-direct prescription example to the `PutPrescription` API documentation.
@@ -22,6 +110,7 @@ Amazon Pharmacy APIs provide the following functionalities for external partners
 - For pharmacy-to-pharmacy transfers: This structure remains mandatory but is now enforced through server-side validation.
 - For prescriber-originated prescriptions: This structure is not required and should be omitted.
 - Modified `PutOrder` API to include examples for Insurance compliance exceptions and providing useful messaging when `InsuranceComplianceException` is returned.
+
 
 ### 2025-01-06 v1.16.2
 #### Added:
@@ -113,9 +202,9 @@ Amazon Pharmacy APIs provide the following functionalities for external partners
 ## Overview
 This API client was generated by the [OpenAPI Generator](https://openapi-generator.tech) project.  By using the [OpenAPI-spec](https://www.openapis.org/) from a remote server, you can easily generate an API client.
 
-- API version: 1.16.4
+- API version: 1.23.1
 - Package version: 1.0.0
-- Generator version: 7.12.0
+- Generator version: 7.14.0
 - Build package: org.openapitools.codegen.languages.GoClientCodegen
 
 ## Installation
@@ -222,9 +311,14 @@ Class | Method | HTTP request | Description
  - [DeaSchedule](docs/DeaSchedule.md)
  - [Diagnosis](docs/Diagnosis.md)
  - [DiagnosisCode](docs/DiagnosisCode.md)
+ - [DiagnosisCodeQualifier](docs/DiagnosisCodeQualifier.md)
+ - [DiagnosisCodeWithQualifier](docs/DiagnosisCodeWithQualifier.md)
  - [DrugDbCode](docs/DrugDbCode.md)
  - [DrugDbCodeQualifier](docs/DrugDbCodeQualifier.md)
+ - [EntityType](docs/EntityType.md)
  - [ErrorField](docs/ErrorField.md)
+ - [EventNotification](docs/EventNotification.md)
+ - [EventType](docs/EventType.md)
  - [ExistingMedicalConditionsDescriptor](docs/ExistingMedicalConditionsDescriptor.md)
  - [ExistingMedicalConditionsDetails](docs/ExistingMedicalConditionsDetails.md)
  - [ExistingMedication](docs/ExistingMedication.md)
@@ -241,10 +335,12 @@ Class | Method | HTTP request | Description
  - [InternalServerExceptionResponseContent](docs/InternalServerExceptionResponseContent.md)
  - [InvalidInputErrorCode](docs/InvalidInputErrorCode.md)
  - [InvalidInputExceptionResponseContent](docs/InvalidInputExceptionResponseContent.md)
+ - [Measurement](docs/Measurement.md)
  - [MedicalCondition](docs/MedicalCondition.md)
  - [MedicalDiagnosis](docs/MedicalDiagnosis.md)
  - [MedicationPrescribed](docs/MedicationPrescribed.md)
  - [Name](docs/Name.md)
+ - [Observation](docs/Observation.md)
  - [Order](docs/Order.md)
  - [OrderInsurance](docs/OrderInsurance.md)
  - [OrderInsuranceDetails](docs/OrderInsuranceDetails.md)
@@ -297,6 +393,7 @@ Class | Method | HTTP request | Description
  - [ThrottlingExceptionResponseContent](docs/ThrottlingExceptionResponseContent.md)
  - [TransferRequestStatus](docs/TransferRequestStatus.md)
  - [TransferToPharmacy](docs/TransferToPharmacy.md)
+ - [VitalSign](docs/VitalSign.md)
 
 
 ## Documentation For Authorization
