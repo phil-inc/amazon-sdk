@@ -9,15 +9,15 @@ Name | Type | Description | Notes
 **Quantity** | [**Quantity**](Quantity.md) |  | 
 **Strength** | Pointer to [**Strength**](Strength.md) |  | [optional] 
 **DaysSupply** | Pointer to **float64** | Estimated number of days a prescription would last. | [optional] 
-**WrittenDate** | **string** | The date on which the prescriber wrote the prescription, quoted in the format &#39;YYYY-MM-DD&#39;. | 
+**WrittenDate** | **string** | The date on which the prescriber wrote the prescription. Accepts two formats, with DateTime in UTC preferred: 1. Date and time in UTC timezone: &#39;YYYY-MM-DDTHH:MM:SSZ&#39; 2. Simple date: &#39;YYYY-MM-DD&#39;  Examples: - &#39;2025-07-30T14:30:00Z&#39; (preferred format) - &#39;2025-07-30&#39; (date only) | 
 **NumberOfRefills** | **float64** | The number of refills allowed for this prescription excluding the first fill. | 
 **Directions** | **string** | Clinical directions meaningful to the patient as written by the prescriber, e.g., &#39;Take 1 tablet by mouth once weekly.&#39; | 
 **Ndc** | **string** | The National Drug Code of the medication, without dashes or spaces. | 
 **Rxcui** | Pointer to **string** | RxNorm concept unique identifier. This shape is deprecated: RxNorm codes are included in drugDbCode field. This field will no longer be supported starting from 2025-03-12. | [optional] 
 **DrugDbCode** | Pointer to [**DrugDbCode**](DrugDbCode.md) |  | [optional] 
 **DispenseAsWritten** | **string** | An indicator that the prescriber has instructed to dispense as written (DAW) code. This is typically used when a brand is chosen over a generic alternative based on the direction of the prescriber. 0 means no DAW is specified 1 means by prescriber 2 means a patient/user request 9 means other. | 
-**EffectiveDate** | Pointer to **string** | The date on which the user is intended to start the prescription, quoted in the format &#39;YYYY-MM-DD&#39;. | [optional] 
-**ExpirationDate** | Pointer to **string** | The date on which the prescription expires, quoted in the format &#39;YYYY-MM-DD&#39;. | [optional] 
+**EffectiveDate** | Pointer to **string** | The date on which the user is intended to start the prescription. Accepts two formats, with DateTime in UTC preferred: 1. Date and time in UTC timezone: &#39;YYYY-MM-DDTHH:MM:SSZ&#39; 2. Simple date: &#39;YYYY-MM-DD&#39;  Examples: - &#39;2025-07-30T14:30:00Z&#39; (preferred format) - &#39;2025-07-30&#39; (date only) | [optional] 
+**ExpirationDate** | Pointer to **string** | The date on which the prescription expires. Accepts two formats, with DateTime in UTC preferred: 1. Date and time in UTC timezone: &#39;YYYY-MM-DDTHH:MM:SSZ&#39; 2. Simple date: &#39;YYYY-MM-DD&#39;  Examples: - &#39;2025-07-30T14:30:00Z&#39; (preferred format) - &#39;2025-07-30&#39; (date only) | [optional] 
 **DeaSchedule** | Pointer to [**DeaSchedule**](DeaSchedule.md) |  | [optional] 
 **Diagnosis** | Pointer to [**[]Diagnosis**](Diagnosis.md) | Medical diagnosis information for which the patient is prescribed. First item is the Primary Diagnosis, second is Secondary.  This shape is deprecated: This field will be replaced by &#x60;medicalDiagnosis&#x60;. This field will no longer be supported starting from 2025-03-12 | [optional] 
 **MedicalDiagnosis** | Pointer to [**MedicalDiagnosis**](MedicalDiagnosis.md) |  | [optional] 

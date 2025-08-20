@@ -11,432 +11,100 @@ API version: 1.23.1
 package amazonpharmacy
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 )
 
-// checks if the Order type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &Order{}
+// DiagnosisCodeQualifier String representation of the coding system that is being referenced by diagnosis code. ICD10CM - International Classification of Diseases-10- Clinical Modifications (ICD-10-CM) Code indicating that the following     information is a diagnosis as defined by ICD-10-CM. As of January 1, 1999, the ICD-10 is used to code and classify     mortality data from death certificates. The International Classification of Diseases, 10th Revision,     Clinical Modification (ICD-10-CM)  is a statistical classification system that arranges diseases and injuries into     groups according to established criteria. The codes are 3 to 7 digits with the first digit alpha, the second and     third numeric and the remainder A/N. The codes are maintained by the World Health Organization and published by     the Centers for Medicare and Medicaid Services. SNOMED - Systematized Nomenclature of Medicine Clinical Terms® (SNOMED CT). SNOMED CT® terminology which is     available from the Health Terminology Standards Development Organisation (IHTSDO) http://www.ihtsdo.org/snomed-ct/
+type DiagnosisCodeQualifier string
 
-// Order Structure representing an order.
-type Order struct {
-	Status OrderStatus `json:"status"`
-	// The partner ID of the prescription this order is associated with.
-	PartnerPrescriptionId string                 `json:"partnerPrescriptionId" validate:"regexp=^[0-9a-zA-Z-]{1,40}$"`
-	StatusReasonCode      *OrderStatusReasonCode `json:"statusReasonCode,omitempty"`
-	// A more detailed explanation of the order's status.
-	StatusDescription      *string                 `json:"statusDescription,omitempty" validate:"regexp=^\\\\s*\\\\S.*$"`
-	AdditionalOrderDetails *AdditionalOrderDetails `json:"additionalOrderDetails,omitempty"`
-	// The date the fill was created, in the format 'YYYY-MM-DD'.
-	FilledDate *string `json:"filledDate,omitempty" validate:"regexp=^\\\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"`
-	// The date the fill was shipped, in the format 'YYYY-MM-DD'.
-	ShipDate *string `json:"shipDate,omitempty" validate:"regexp=^\\\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"`
-	// The number of times this prescription has been filled.
-	FillNumber *float32 `json:"fillNumber,omitempty"`
-	// The number of units in dispense.
-	QuantityDispensed *float32 `json:"quantityDispensed,omitempty"`
+// List of DiagnosisCodeQualifier
+const (
+	ICD10_CM DiagnosisCodeQualifier = "ICD10CM"
+	SNOMED   DiagnosisCodeQualifier = "SNOMED"
+)
+
+// All allowed values of DiagnosisCodeQualifier enum
+var AllowedDiagnosisCodeQualifierEnumValues = []DiagnosisCodeQualifier{
+	"ICD10CM",
+	"SNOMED",
 }
 
-type _Order Order
-
-// NewOrder instantiates a new Order object
-// This constructor will assign default values to properties that have it defined,
-// and makes sure properties required by API are set, but the set of arguments
-// will change when the set of required properties is changed
-func NewOrder(status OrderStatus, partnerPrescriptionId string) *Order {
-	this := Order{}
-	this.Status = status
-	this.PartnerPrescriptionId = partnerPrescriptionId
-	return &this
-}
-
-// NewOrderWithDefaults instantiates a new Order object
-// This constructor will only assign default values to properties that have it defined,
-// but it doesn't guarantee that properties required by API are set
-func NewOrderWithDefaults() *Order {
-	this := Order{}
-	return &this
-}
-
-// GetStatus returns the Status field value
-func (o *Order) GetStatus() OrderStatus {
-	if o == nil {
-		var ret OrderStatus
-		return ret
-	}
-
-	return o.Status
-}
-
-// GetStatusOk returns a tuple with the Status field value
-// and a boolean to check if the value has been set.
-func (o *Order) GetStatusOk() (*OrderStatus, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Status, true
-}
-
-// SetStatus sets field value
-func (o *Order) SetStatus(v OrderStatus) {
-	o.Status = v
-}
-
-// GetPartnerPrescriptionId returns the PartnerPrescriptionId field value
-func (o *Order) GetPartnerPrescriptionId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.PartnerPrescriptionId
-}
-
-// GetPartnerPrescriptionIdOk returns a tuple with the PartnerPrescriptionId field value
-// and a boolean to check if the value has been set.
-func (o *Order) GetPartnerPrescriptionIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.PartnerPrescriptionId, true
-}
-
-// SetPartnerPrescriptionId sets field value
-func (o *Order) SetPartnerPrescriptionId(v string) {
-	o.PartnerPrescriptionId = v
-}
-
-// GetStatusReasonCode returns the StatusReasonCode field value if set, zero value otherwise.
-func (o *Order) GetStatusReasonCode() OrderStatusReasonCode {
-	if o == nil || IsNil(o.StatusReasonCode) {
-		var ret OrderStatusReasonCode
-		return ret
-	}
-	return *o.StatusReasonCode
-}
-
-// GetStatusReasonCodeOk returns a tuple with the StatusReasonCode field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetStatusReasonCodeOk() (*OrderStatusReasonCode, bool) {
-	if o == nil || IsNil(o.StatusReasonCode) {
-		return nil, false
-	}
-	return o.StatusReasonCode, true
-}
-
-// HasStatusReasonCode returns a boolean if a field has been set.
-func (o *Order) HasStatusReasonCode() bool {
-	if o != nil && !IsNil(o.StatusReasonCode) {
-		return true
-	}
-
-	return false
-}
-
-// SetStatusReasonCode gets a reference to the given OrderStatusReasonCode and assigns it to the StatusReasonCode field.
-func (o *Order) SetStatusReasonCode(v OrderStatusReasonCode) {
-	o.StatusReasonCode = &v
-}
-
-// GetStatusDescription returns the StatusDescription field value if set, zero value otherwise.
-func (o *Order) GetStatusDescription() string {
-	if o == nil || IsNil(o.StatusDescription) {
-		var ret string
-		return ret
-	}
-	return *o.StatusDescription
-}
-
-// GetStatusDescriptionOk returns a tuple with the StatusDescription field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetStatusDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.StatusDescription) {
-		return nil, false
-	}
-	return o.StatusDescription, true
-}
-
-// HasStatusDescription returns a boolean if a field has been set.
-func (o *Order) HasStatusDescription() bool {
-	if o != nil && !IsNil(o.StatusDescription) {
-		return true
-	}
-
-	return false
-}
-
-// SetStatusDescription gets a reference to the given string and assigns it to the StatusDescription field.
-func (o *Order) SetStatusDescription(v string) {
-	o.StatusDescription = &v
-}
-
-// GetAdditionalOrderDetails returns the AdditionalOrderDetails field value if set, zero value otherwise.
-func (o *Order) GetAdditionalOrderDetails() AdditionalOrderDetails {
-	if o == nil || IsNil(o.AdditionalOrderDetails) {
-		var ret AdditionalOrderDetails
-		return ret
-	}
-	return *o.AdditionalOrderDetails
-}
-
-// GetAdditionalOrderDetailsOk returns a tuple with the AdditionalOrderDetails field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetAdditionalOrderDetailsOk() (*AdditionalOrderDetails, bool) {
-	if o == nil || IsNil(o.AdditionalOrderDetails) {
-		return nil, false
-	}
-	return o.AdditionalOrderDetails, true
-}
-
-// HasAdditionalOrderDetails returns a boolean if a field has been set.
-func (o *Order) HasAdditionalOrderDetails() bool {
-	if o != nil && !IsNil(o.AdditionalOrderDetails) {
-		return true
-	}
-
-	return false
-}
-
-// SetAdditionalOrderDetails gets a reference to the given AdditionalOrderDetails and assigns it to the AdditionalOrderDetails field.
-func (o *Order) SetAdditionalOrderDetails(v AdditionalOrderDetails) {
-	o.AdditionalOrderDetails = &v
-}
-
-// GetFilledDate returns the FilledDate field value if set, zero value otherwise.
-func (o *Order) GetFilledDate() string {
-	if o == nil || IsNil(o.FilledDate) {
-		var ret string
-		return ret
-	}
-	return *o.FilledDate
-}
-
-// GetFilledDateOk returns a tuple with the FilledDate field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetFilledDateOk() (*string, bool) {
-	if o == nil || IsNil(o.FilledDate) {
-		return nil, false
-	}
-	return o.FilledDate, true
-}
-
-// HasFilledDate returns a boolean if a field has been set.
-func (o *Order) HasFilledDate() bool {
-	if o != nil && !IsNil(o.FilledDate) {
-		return true
-	}
-
-	return false
-}
-
-// SetFilledDate gets a reference to the given string and assigns it to the FilledDate field.
-func (o *Order) SetFilledDate(v string) {
-	o.FilledDate = &v
-}
-
-// GetShipDate returns the ShipDate field value if set, zero value otherwise.
-func (o *Order) GetShipDate() string {
-	if o == nil || IsNil(o.ShipDate) {
-		var ret string
-		return ret
-	}
-	return *o.ShipDate
-}
-
-// GetShipDateOk returns a tuple with the ShipDate field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetShipDateOk() (*string, bool) {
-	if o == nil || IsNil(o.ShipDate) {
-		return nil, false
-	}
-	return o.ShipDate, true
-}
-
-// HasShipDate returns a boolean if a field has been set.
-func (o *Order) HasShipDate() bool {
-	if o != nil && !IsNil(o.ShipDate) {
-		return true
-	}
-
-	return false
-}
-
-// SetShipDate gets a reference to the given string and assigns it to the ShipDate field.
-func (o *Order) SetShipDate(v string) {
-	o.ShipDate = &v
-}
-
-// GetFillNumber returns the FillNumber field value if set, zero value otherwise.
-func (o *Order) GetFillNumber() float32 {
-	if o == nil || IsNil(o.FillNumber) {
-		var ret float32
-		return ret
-	}
-	return *o.FillNumber
-}
-
-// GetFillNumberOk returns a tuple with the FillNumber field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetFillNumberOk() (*float32, bool) {
-	if o == nil || IsNil(o.FillNumber) {
-		return nil, false
-	}
-	return o.FillNumber, true
-}
-
-// HasFillNumber returns a boolean if a field has been set.
-func (o *Order) HasFillNumber() bool {
-	if o != nil && !IsNil(o.FillNumber) {
-		return true
-	}
-
-	return false
-}
-
-// SetFillNumber gets a reference to the given float32 and assigns it to the FillNumber field.
-func (o *Order) SetFillNumber(v float32) {
-	o.FillNumber = &v
-}
-
-// GetQuantityDispensed returns the QuantityDispensed field value if set, zero value otherwise.
-func (o *Order) GetQuantityDispensed() float32 {
-	if o == nil || IsNil(o.QuantityDispensed) {
-		var ret float32
-		return ret
-	}
-	return *o.QuantityDispensed
-}
-
-// GetQuantityDispensedOk returns a tuple with the QuantityDispensed field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Order) GetQuantityDispensedOk() (*float32, bool) {
-	if o == nil || IsNil(o.QuantityDispensed) {
-		return nil, false
-	}
-	return o.QuantityDispensed, true
-}
-
-// HasQuantityDispensed returns a boolean if a field has been set.
-func (o *Order) HasQuantityDispensed() bool {
-	if o != nil && !IsNil(o.QuantityDispensed) {
-		return true
-	}
-
-	return false
-}
-
-// SetQuantityDispensed gets a reference to the given float32 and assigns it to the QuantityDispensed field.
-func (o *Order) SetQuantityDispensed(v float32) {
-	o.QuantityDispensed = &v
-}
-
-func (o Order) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o Order) ToMap() (map[string]interface{}, error) {
-	toSerialize := map[string]interface{}{}
-	toSerialize["status"] = o.Status
-	toSerialize["partnerPrescriptionId"] = o.PartnerPrescriptionId
-	if !IsNil(o.StatusReasonCode) {
-		toSerialize["statusReasonCode"] = o.StatusReasonCode
-	}
-	if !IsNil(o.StatusDescription) {
-		toSerialize["statusDescription"] = o.StatusDescription
-	}
-	if !IsNil(o.AdditionalOrderDetails) {
-		toSerialize["additionalOrderDetails"] = o.AdditionalOrderDetails
-	}
-	if !IsNil(o.FilledDate) {
-		toSerialize["filledDate"] = o.FilledDate
-	}
-	if !IsNil(o.ShipDate) {
-		toSerialize["shipDate"] = o.ShipDate
-	}
-	if !IsNil(o.FillNumber) {
-		toSerialize["fillNumber"] = o.FillNumber
-	}
-	if !IsNil(o.QuantityDispensed) {
-		toSerialize["quantityDispensed"] = o.QuantityDispensed
-	}
-	return toSerialize, nil
-}
-
-func (o *Order) UnmarshalJSON(data []byte) (err error) {
-	// This validates that all required properties are included in the JSON object
-	// by unmarshalling the object into a generic map with string keys and checking
-	// that every required field exists as a key in the generic map.
-	requiredProperties := []string{
-		"status",
-		"partnerPrescriptionId",
-	}
-
-	allProperties := make(map[string]interface{})
-
-	err = json.Unmarshal(data, &allProperties)
-
+func (v *DiagnosisCodeQualifier) UnmarshalJSON(src []byte) error {
+	var value string
+	err := json.Unmarshal(src, &value)
 	if err != nil {
 		return err
 	}
-
-	for _, requiredProperty := range requiredProperties {
-		if _, exists := allProperties[requiredProperty]; !exists {
-			return fmt.Errorf("no value given for required property %v", requiredProperty)
+	enumTypeValue := DiagnosisCodeQualifier(value)
+	for _, existing := range AllowedDiagnosisCodeQualifierEnumValues {
+		if existing == enumTypeValue {
+			*v = enumTypeValue
+			return nil
 		}
 	}
 
-	varOrder := _Order{}
-
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varOrder)
-
-	if err != nil {
-		return err
-	}
-
-	*o = Order(varOrder)
-
-	return err
+	return fmt.Errorf("%+v is not a valid DiagnosisCodeQualifier", value)
 }
 
-type NullableOrder struct {
-	value *Order
+// NewDiagnosisCodeQualifierFromValue returns a pointer to a valid DiagnosisCodeQualifier
+// for the value passed as argument, or an error if the value passed is not allowed by the enum
+func NewDiagnosisCodeQualifierFromValue(v string) (*DiagnosisCodeQualifier, error) {
+	ev := DiagnosisCodeQualifier(v)
+	if ev.IsValid() {
+		return &ev, nil
+	} else {
+		return nil, fmt.Errorf("invalid value '%v' for DiagnosisCodeQualifier: valid values are %v", v, AllowedDiagnosisCodeQualifierEnumValues)
+	}
+}
+
+// IsValid return true if the value is valid for the enum, false otherwise
+func (v DiagnosisCodeQualifier) IsValid() bool {
+	for _, existing := range AllowedDiagnosisCodeQualifierEnumValues {
+		if existing == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Ptr returns reference to DiagnosisCodeQualifier value
+func (v DiagnosisCodeQualifier) Ptr() *DiagnosisCodeQualifier {
+	return &v
+}
+
+type NullableDiagnosisCodeQualifier struct {
+	value *DiagnosisCodeQualifier
 	isSet bool
 }
 
-func (v NullableOrder) Get() *Order {
+func (v NullableDiagnosisCodeQualifier) Get() *DiagnosisCodeQualifier {
 	return v.value
 }
 
-func (v *NullableOrder) Set(val *Order) {
+func (v *NullableDiagnosisCodeQualifier) Set(val *DiagnosisCodeQualifier) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableOrder) IsSet() bool {
+func (v NullableDiagnosisCodeQualifier) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableOrder) Unset() {
+func (v *NullableDiagnosisCodeQualifier) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableOrder(val *Order) *NullableOrder {
-	return &NullableOrder{value: val, isSet: true}
+func NewNullableDiagnosisCodeQualifier(val *DiagnosisCodeQualifier) *NullableDiagnosisCodeQualifier {
+	return &NullableDiagnosisCodeQualifier{value: val, isSet: true}
 }
 
-func (v NullableOrder) MarshalJSON() ([]byte, error) {
+func (v NullableDiagnosisCodeQualifier) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableOrder) UnmarshalJSON(src []byte) error {
+func (v *NullableDiagnosisCodeQualifier) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -11,13 +11,43 @@ info:
 
     ## Changelog for the Amazon Pharmacy APIs (from version 1.15.3):
 
+    ### 2025-08-15 v1.23.1
+    #### Added:
+    - Added `DUR_REVIEW_IN_PROGRESS` to `OrderStatusReasonCode`.
+    - This is a new status reason code to be returned for ORDER_FAILED and indicates the order is under DUR (Drug Utilization Review). Please retry placing the order using PutOrder API in 2-4 hours
+
+    ### 2025-08-05 v1.23.0
+    #### Changed:
+    - Updated validation rules for prescriber partners:
+      - Allergies: Allow NOT_AVAILABLE in patient data when no allergy data is provided by the prescriber
+      - Medical conditions: Must always be set as NOT_AVAILABLE
+
+    ### 2025-08-01 v1.22.0
+    #### Changed:
+    - Updated `MedicationPrescribed` structure in `PutPrescription API`:
+      - Modified `writtenDate`, `effectiveDate`, and `expirationDate` fields to accept both UTC DateTime (YYYY-MM-DDTHH:MM:SSZ) and simple Date (YYYY-MM-DD) formats
+      - Added recommendations to use DateTime over simple Date format
+    - Updated API examples to demonstrate both supported formats
+
+    ### 2025-07-16 v1.21.0
+    #### Added:
+    - Enhanced diagnosis code support in PutPrescription API:
+      - New optional `codeWithQualifier` field in `DiagnosisCode` structure to support additional code systems
+      - Made `icd10Code` field optional for prescriber partners when `codeWithQualifier` is provided
+    - Added example payloads demonstrating usage of new fields
+
+    #### Changed:
+    - Updated `Allergy` structure to make the `code` and `codeType` fields optional in `PutPatient API`, allowing prescriber partners to omit these fields when calling the PutPatient API
+    - Updated documentation to reflect new code system options and field requirements
+    - Improved documentation on `Name` field by making patient-specific suffix checks explicit
+
     ### 2025-07-14 v1.20.1
     #### Changed:
     - Updated the regex pattern for `patientDetails.name`, `prescriber.prescriberName`, `pharmacist.pharmacistName` field to accept special characters like `-`, `'`, `.` for `firstName`, `middleName`, `lastName` subfields.
 
     ### 2025-07-07 v1.20.0
     #### Added:
-    - `INVALID_DELIVERY_ADDRESS` to `OrderStatusReasonCode`.
+    - Added `INVALID_DELIVERY_ADDRESS` to `OrderStatusReasonCode`.
 
     #### Changed:
     - Updated `MedicationPrescribed` structure to make the `daysSupply` field optional in `PutPrescription API`, allowing prescriber partners to omit this field when calling the PutPrescription API
@@ -170,7 +200,7 @@ info:
     - All APIs will accept `client-request-id` as header parameter. This can be set by Partners and it will be used to identify partner API requests. Please see updated request headers for all APIs.
   title: "Amazon Pharmacy APIs for ingesting Prescriptions, Patients, Orders and Payment\
     \ Instruments"
-  version: 1.20.1
+  version: 1.23.1
 servers:
 - description: Production Server
   url: https://partner.pharmacy.api.health.amazon/ingestion
@@ -1130,6 +1160,39 @@ paths:
                     state: WA
                     zipCode: "98109"
                     countryCode: US
+              PutPatient_example8:
+                description: ""
+                summary: Provider partner configured to send patient health data but
+                  has only free form allergy data
+                value:
+                  partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
+                  patientDetails:
+                    email: John.Doe@amazon.com
+                    contactInfo:
+                    - countryCode: 1
+                      phoneNumber: "9048374176"
+                      contactSystemType: Mobile
+                    smsConsent: true
+                    name:
+                      firstName: John
+                      lastName: Doe
+                    dateOfBirth: 1992-05-05
+                    allergyDetails:
+                      allergiesDescriptor: KNOWN_ALLERGIES_INCLUDED
+                      allergies:
+                      - textValue: Galactose
+                      - textValue: FERRIC PYROPHOSPHATE CITRATE
+                      - textValue: COSYNTROPIN
+                    existingMedicalConditionDetails:
+                      existingMedicalConditionsDescriptor: NOT_AVAILABLE
+                    pregnancyStatus: NOT_AVAILABLE
+                    sexAssignedAtBirth: Male
+                  residentialAddress:
+                    addressLine1: 410 Terry Ave N
+                    city: Seattle
+                    state: WA
+                    zipCode: "98109"
+                    countryCode: US
             schema:
               $ref: "#/components/schemas/PutPatientRequestContent"
         required: true
@@ -1158,6 +1221,12 @@ paths:
                   description: ""
                   summary: Partner configured to not send any health data and no insurances
                     provided
+                  value:
+                    partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
+                PutPatient_example8:
+                  description: ""
+                  summary: Provider partner configured to send patient health data
+                    but has only free form allergy data
                   value:
                     partnerPatientId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f2
               schema:
@@ -1935,7 +2004,8 @@ paths:
                     directions: CHANGE POD EVERY 3 DAYS
                     ndc: "08508300001"
                     dispenseAsWritten: "1"
-                    effectiveDate: 2023-11-23
+                    effectiveDate: 2023-11-23T22:05:10Z
+                    expirationDate: 2024-11-23T22:05:10Z
                     medicalDiagnosis:
                       clinicalInformationQualifier: "1"
                       primary:
@@ -2051,12 +2121,13 @@ paths:
                       strengthFormCode: C29012
                       strengthUnitOfMeasureCode: C25301
                     daysSupply: 30
-                    writtenDate: 2024-11-20
+                    writtenDate: 2024-11-20T20:23:01Z
                     numberOfRefills: 1
                     directions: CHANGE POD EVERY 3 DAYS
                     ndc: "08508300001"
                     dispenseAsWritten: "1"
-                    effectiveDate: 2024-11-23
+                    effectiveDate: 2024-11-23T21:00:15.4214Z
+                    expirationDate: 2024-12-20T12:03:16Z
                     medicalDiagnosis:
                       clinicalInformationQualifier: "1"
                       primary:
@@ -2190,7 +2261,7 @@ paths:
                     directions: CHANGE POD EVERY 3 DAYS
                     ndc: "08508300001"
                     dispenseAsWritten: "1"
-                    effectiveDate: 2023-11-23
+                    effectiveDate: 2023-11-23T15:48:11Z
                     medicalDiagnosis:
                       clinicalInformationQualifier: "1"
                       primary:
@@ -2259,12 +2330,13 @@ paths:
                       strengthFormCode: C42998
                       strengthUnitOfMeasureCode: C28253
                     daysSupply: 30
-                    writtenDate: 2023-11-20
+                    writtenDate: 2023-11-20T19:27:21Z
                     numberOfRefills: 0
                     directions: TAKE 1 TABLET BY MOUTH DAILY
                     ndc: "60505347903"
                     dispenseAsWritten: "0"
                     effectiveDate: 2023-11-23
+                    expirationDate: 2025-06-23
                     medicalDiagnosis:
                       clinicalInformationQualifier: "1"
                       primary:
@@ -2456,12 +2528,12 @@ paths:
                       strengthFormCode: C42998
                       strengthUnitOfMeasureCode: C28254
                     daysSupply: 30
-                    writtenDate: 2023-10-15
+                    writtenDate: 2023-10-15T13:24:24Z
                     numberOfRefills: 3
                     directions: TAKE 1 TABLET BY MOUTH DAILY ON EMPTY STOMACH
                     ndc: "00378180301"
                     dispenseAsWritten: "0"
-                    effectiveDate: 2023-10-20
+                    effectiveDate: 2023-10-20T04:04:04Z
                     medicalDiagnosis:
                       clinicalInformationQualifier: "1"
                       primary:
@@ -2562,12 +2634,12 @@ paths:
                       strengthFormCode: C42998
                       strengthUnitOfMeasureCode: C28253
                     daysSupply: 30
-                    writtenDate: 2023-09-15
+                    writtenDate: 2023-09-15T23:58:09Z
                     numberOfRefills: 5
                     directions: TAKE 1 TABLET BY MOUTH THRICE DAILY
                     ndc: "68180051401"
                     dispenseAsWritten: "0"
-                    effectiveDate: 2023-09-15
+                    effectiveDate: 2023-09-15T23:59:09Z
                     medicalDiagnosis:
                       clinicalInformationQualifier: "1"
                       primary:
@@ -2644,6 +2716,99 @@ paths:
                       countryCode: US
                     primaryTelephone: "8557455725"
                     fax: "8557455725"
+              PutPrescription_example8:
+                description: ""
+                summary: Example Prescription Request for prescriber-direct prescriptions
+                  with SNOMED diagnosis codes
+                value:
+                  partnerPrescriptionId: 5b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f3
+                  partnerPatientId: 041594cb-8c62-44d6-b2c9-649601d7e798
+                  prescriber:
+                    primaryTelephone: "9194713351"
+                    npi: "1639384175"
+                    deaNumber: BK2277780
+                    prescriberName:
+                      firstName: John
+                      lastName: Kihm
+                    prescriberAddress:
+                      addressLine1: 3811 N Roxboro St
+                      city: Durham
+                      state: NC
+                      zipCode: "27704"
+                      countryCode: US
+                    stateLicenseNumber: "55555555"
+                    businessName: Joe and Janes
+                    fax: "9194713351"
+                  supervisingPhysician:
+                    primaryTelephone: "9194713351"
+                    npi: "1639384175"
+                    deaNumber: BK2277780
+                    prescriberName:
+                      firstName: John
+                      lastName: Kihm
+                    prescriberAddress:
+                      addressLine1: 3811 N Roxboro St
+                      city: Durham
+                      state: NC
+                      zipCode: "27704"
+                      countryCode: US
+                    stateLicenseNumber: "55555555"
+                    businessName: Joe and Janes
+                    fax: "9194713351"
+                  medicationPrescribed:
+                    drugDescription: "INSULET CORP OMNIPOD 5 G6 INTRO KIT (GEN 5)\
+                      \ (Box, 1.0 Each)"
+                    quantity:
+                      value: 3
+                      quantityUnitOfMeasureCode: C120216
+                      codeListQualifier: "38"
+                    strength:
+                      value: "200.0"
+                      strengthFormCode: C29012
+                      strengthUnitOfMeasureCode: C25301
+                    daysSupply: 30
+                    writtenDate: 2023-11-20
+                    numberOfRefills: 3
+                    directions: CHANGE POD EVERY 3 DAYS
+                    ndc: "08508300001"
+                    dispenseAsWritten: "1"
+                    effectiveDate: 2023-11-23
+                    medicalDiagnosis:
+                      clinicalInformationQualifier: "1"
+                      primary:
+                        codeWithQualifier:
+                          code: "78275009"
+                          codeQualifier: SNOMED
+                        description: Obstructive sleep apnea
+                      secondary:
+                        icd10Code: Z68.27
+                        description: N/A
+                  receivingPharmacy:
+                    ncpdpId: "0362309"
+                    npi: "1912499500"
+                    pharmacyName: AZ Pharmacy LLC
+                    pharmacistName:
+                      firstName: Chris
+                      lastName: Rochon
+                    pharmacyAddress:
+                      addressLine1: 3809 E Watkins St
+                      city: Phoenix
+                      state: AZ
+                      zipCode: 85034-7264
+                      countryCode: US
+                    primaryTelephone: "8557455725"
+                    fax: "8557455725"
+                  observation:
+                    measurement:
+                    - vitalSign: HEIGHT
+                      value: "180"
+                      measurementUnitOfMeasure: cm
+                      observationDate: 2023-11-11
+                    - vitalSign: WEIGHT
+                      value: "75"
+                      measurementUnitOfMeasure: kg
+                      observationDate: 2023-11-11
+                    observationNotes: Patient's BMI is within normal range.
             schema:
               $ref: "#/components/schemas/PutPrescriptionRequestContent"
         required: true
@@ -2779,6 +2944,27 @@ paths:
                   value:
                     partnerPrescriptionId: 2b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f8
                     receivingPharmacy:
+                      ncpdpId: "0362309"
+                      npi: "1912499500"
+                      pharmacistName:
+                        firstName: Chris
+                        lastName: Rochon
+                      pharmacyAddress:
+                        addressLine1: 3809 E Watkins St
+                        city: Phoenix
+                        countryCode: US
+                        state: AZ
+                        zipCode: 85034-7264
+                      pharmacyName: AZ Pharmacy LLC
+                      primaryTelephone: "8557455725"
+                PutPrescription_example8:
+                  description: ""
+                  summary: Example Prescription Request for prescriber-direct prescriptions
+                    with SNOMED diagnosis codes
+                  value:
+                    partnerPrescriptionId: 5b4f8e1a-9c3d-6f7b-8a2e-d5c1e0a3b2f3
+                    receivingPharmacy:
+                      fax: "8557455725"
                       ncpdpId: "0362309"
                       npi: "1912499500"
                       pharmacistName:
@@ -3342,8 +3528,6 @@ components:
           pattern: ^\s*\S.*$
           type: string
       required:
-      - code
-      - codeType
       - textValue
       type: object
     AllergyCodeType:
@@ -3666,14 +3850,21 @@ components:
     DiagnosisCode:
       example:
         icd10Code: icd10Code
+        codeWithQualifier:
+          code: code
+          codeQualifier: ICD10CM
         description: description
       properties:
         icd10Code:
-          description: International Classification of Diseases (ICD 10) Code of the
-            diagnosis.
+          description: |-
+            International Classification of Diseases (ICD 10) Code of the diagnosis.
+            Required for Hubs partners.
+            Not required if codeWithQualifier is passed in.
           pattern: "^[A-TV-Za-tv-z][0-9][0-9ABab](?:\\.[0-9A-KXZa-kxz](?:[0-9A-EXYZa-exyz](?:[0-9A-HXa-hx][0-59A-HJKMNP-Sa-hjkmnp-s]?)?)?)?|U07(?:\\\
             .[01])?$"
           type: string
+        codeWithQualifier:
+          $ref: "#/components/schemas/DiagnosisCodeWithQualifier"
         description:
           description: |-
             A string that must contain at least one non-whitespace character, potentially preceded by whitespace.
@@ -3693,7 +3884,38 @@ components:
           type: string
       required:
       - description
-      - icd10Code
+      type: object
+    DiagnosisCodeQualifier:
+      description: |-
+        String representation of the coding system that is being referenced by diagnosis code.
+        ICD10CM - International Classification of Diseases-10- Clinical Modifications (ICD-10-CM) Code indicating that the following
+            information is a diagnosis as defined by ICD-10-CM. As of January 1, 1999, the ICD-10 is used to code and classify
+            mortality data from death certificates. The International Classification of Diseases, 10th Revision,
+            Clinical Modification (ICD-10-CM)  is a statistical classification system that arranges diseases and injuries into
+            groups according to established criteria. The codes are 3 to 7 digits with the first digit alpha, the second and
+            third numeric and the remainder A/N. The codes are maintained by the World Health Organization and published by
+            the Centers for Medicare and Medicaid Services.
+        SNOMED - Systematized Nomenclature of Medicine Clinical Terms® (SNOMED CT). SNOMED CT® terminology which is
+            available from the Health Terminology Standards Development Organisation (IHTSDO) http://www.ihtsdo.org/snomed-ct/
+      enum:
+      - ICD10CM
+      - SNOMED
+      type: string
+    DiagnosisCodeWithQualifier:
+      description: Diagnosis code with qualifier that supports multiple code types.
+      example:
+        code: code
+        codeQualifier: ICD10CM
+      properties:
+        code:
+          description: String representation of the diagnosis code
+          pattern: "^([!-~]|[ ])*[!-~]([!-~]|[ ])*$"
+          type: string
+        codeQualifier:
+          $ref: "#/components/schemas/DiagnosisCodeQualifier"
+      required:
+      - code
+      - codeQualifier
       type: object
     DrugDbCode:
       description: Coded Drug Structure used in Medication from alternative source
@@ -4566,10 +4788,16 @@ components:
       example:
         secondary:
           icd10Code: icd10Code
+          codeWithQualifier:
+            code: code
+            codeQualifier: ICD10CM
           description: description
         clinicalInformationQualifier: "1"
         primary:
           icd10Code: icd10Code
+          codeWithQualifier:
+            code: code
+            codeQualifier: ICD10CM
           description: description
       properties:
         clinicalInformationQualifier:
@@ -4613,10 +4841,16 @@ components:
         medicalDiagnosis:
           secondary:
             icd10Code: icd10Code
+            codeWithQualifier:
+              code: code
+              codeQualifier: ICD10CM
             description: description
           clinicalInformationQualifier: "1"
           primary:
             icd10Code: icd10Code
+            codeWithQualifier:
+              code: code
+              codeQualifier: ICD10CM
             description: description
         drugDescription: drugDescription
         rxcui: rxcui
@@ -4646,9 +4880,17 @@ components:
           format: double
           type: number
         writtenDate:
-          description: "The date on which the prescriber wrote the prescription, quoted\
-            \ in the format 'YYYY-MM-DD'."
-          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+          description: |-
+            The date on which the prescriber wrote the prescription.
+            Accepts two formats, with DateTime in UTC preferred:
+            1. Date and time in UTC timezone: 'YYYY-MM-DDTHH:MM:SSZ'
+            2. Simple date: 'YYYY-MM-DD'
+
+            Examples:
+            - '2025-07-30T14:30:00Z' (preferred format)
+            - '2025-07-30' (date only)
+          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?:T([01]\\d|2[0-3]):([0-5]\\\
+            d):([0-5]\\d)(?:\\.\\d{3,9})?Z)?$"
           type: string
         numberOfRefills:
           description: The number of refills allowed for this prescription excluding
@@ -4684,14 +4926,30 @@ components:
           pattern: "^[0-9]$"
           type: string
         effectiveDate:
-          description: "The date on which the user is intended to start the prescription,\
-            \ quoted in the format 'YYYY-MM-DD'."
-          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+          description: |-
+            The date on which the user is intended to start the prescription.
+            Accepts two formats, with DateTime in UTC preferred:
+            1. Date and time in UTC timezone: 'YYYY-MM-DDTHH:MM:SSZ'
+            2. Simple date: 'YYYY-MM-DD'
+
+            Examples:
+            - '2025-07-30T14:30:00Z' (preferred format)
+            - '2025-07-30' (date only)
+          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?:T([01]\\d|2[0-3]):([0-5]\\\
+            d):([0-5]\\d)(?:\\.\\d{3,9})?Z)?$"
           type: string
         expirationDate:
-          description: "The date on which the prescription expires, quoted in the\
-            \ format 'YYYY-MM-DD'."
-          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+          description: |-
+            The date on which the prescription expires.
+            Accepts two formats, with DateTime in UTC preferred:
+            1. Date and time in UTC timezone: 'YYYY-MM-DDTHH:MM:SSZ'
+            2. Simple date: 'YYYY-MM-DD'
+
+            Examples:
+            - '2025-07-30T14:30:00Z' (preferred format)
+            - '2025-07-30' (date only)
+          pattern: "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?:T([01]\\d|2[0-3]):([0-5]\\\
+            d):([0-5]\\d)(?:\\.\\d{3,9})?Z)?$"
           type: string
         deaSchedule:
           $ref: "#/components/schemas/DeaSchedule"
@@ -4771,7 +5029,9 @@ components:
             \\\\-\\[\\]+_`~()@']+)$"
           type: string
         suffix:
-          description: "The suffix of the person's name (e.g., Jr., Sr., III)."
+          description: |-
+            The suffix of the person's name.
+                For a patient, the only valid values are I, II, III, IV, V, Jr, Sr, or None and they are case insensitive.
           maxLength: 4
           pattern: ^\s*\S.*$
           type: string
@@ -5082,6 +5342,8 @@ components:
 
         `INVALID_DELIVERY_ADDRESS` - The address is not valid, e.g. Amazon Pharmacy does not deliver to PO Boxes.
 
+        `DUR_REVIEW_IN_PROGRESS` - Order has entered DUR Review. Please resend the order in 2-4 hours.
+
         `INTERNAL_ERROR` - An internal error occurred during order processing.
 
         `MISSING_PAYMENT_METHOD` - The actual copay was greater than the quoted copay, and the payment method is missing.
@@ -5104,6 +5366,7 @@ components:
       - NO_FILLABLE_PRESCRIPTION
       - PAYMENT_DECLINED
       - INVALID_DELIVERY_ADDRESS
+      - DUR_REVIEW_IN_PROGRESS
       - INTERNAL_ERROR
       - MISSING_PAYMENT_METHOD
       - PENDING_PAYMENT_METHOD_AND_CHECKOUT_FROM_CUSTOMER
@@ -6962,10 +7225,16 @@ components:
           medicalDiagnosis:
             secondary:
               icd10Code: icd10Code
+              codeWithQualifier:
+                code: code
+                codeQualifier: ICD10CM
               description: description
             clinicalInformationQualifier: "1"
             primary:
               icd10Code: icd10Code
+              codeWithQualifier:
+                code: code
+                codeQualifier: ICD10CM
               description: description
           drugDescription: drugDescription
           rxcui: rxcui
